@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-slate-100;
+    font-feature-settings: "tnum" 1;
+  }
+  ::selection {
+    @apply bg-primary/40 text-white;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0b1220;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #243244;
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+  :focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-card/70 backdrop-blur-md border border-border/60;
+  }
+
+  .mono {
+    @apply font-mono tabular-nums;
+  }
+
+  .status-dot {
+    @apply relative inline-flex h-2.5 w-2.5 rounded-full;
+  }
+
+  .status-dot-live::before {
+    content: "";
+    @apply absolute inset-0 rounded-full bg-live animate-pulseRing;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-card/80 rounded-md;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.02) 0px,
+      rgba(255, 255, 255, 0.06) 40px,
+      rgba(255, 255, 255, 0.02) 80px
+    );
+    background-size: 500px 100%;
+    animation: shimmer 1.8s infinite linear;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
