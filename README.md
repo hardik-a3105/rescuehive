@@ -1,89 +1,122 @@
 # RescueHive — Disaster Intelligence Command Center
 
-A production-structured frontend for an AI-powered multi-robot disaster response
-platform, built to feel like real mission-control software (NASA Mission Control /
-SpaceX / air-traffic-control aesthetic — not a typical admin dashboard).
+![RescueHive Banner Placeholder](https://picsum.photos/800/200?random=1)
 
-## Getting started
-
-```bash
-npm install
-npm run dev
-```
-
-Open http://localhost:5173. Log in with any of the demo accounts on the login
-screen (password for all: `demo1234`). Each account demonstrates a different
-role-based dashboard experience:
-
-| Role | Email | Lands on |
-|---|---|---|
-| Incident Commander | commander@rescuehive.io | Dashboard (full picture) |
-| Field Operator | operator@rescuehive.io | Live Mission (focused UI) |
-| System Administrator | admin@rescuehive.io | Admin Panel |
-| Developer | dev@rescuehive.io | System Health / logs |
-| Support | support@rescuehive.io | Dashboard (read-focused) |
-
-## What's real vs. simulated
-
-Everything in this app runs against **mock data and a simulated WebSocket** —
-there is no backend required to explore the full UI. The simulation layer is
-built so it's a drop-in replacement:
-
-- `src/services/websocket/mockSocket.ts` — mimics a real `WebSocket`'s
-  connect / message / reconnect lifecycle. Swap this for a real socket
-  connecting to `VITE_WS_URL` and nothing downstream changes.
-- `src/services/websocket/messageProducer.ts` — generates plausible
-  `telemetry` / `robot_status` / `map_update` / `detection` / `mission_progress`
-  events on an interval, matching the backend contract in the spec.
-- `src/services/websocket/dispatch.ts` — the "Message Parser" layer: routes
-  each inbound message type to the right Zustand store slice.
-- `src/services/api/*` — Axios-based REST calls whose function signatures
-  already match the FastAPI endpoints (`/auth/login`, `/missions/{id}/start`,
-  etc.). Bodies currently resolve against local state; swap in `apiClient`
-  calls to point at a real backend.
-
-Set `VITE_API_BASE_URL` / `VITE_WS_URL` in a `.env` (see `.env.example`) once
-a backend is available.
+A production-structured full-stack platform for an AI-powered multi-robot disaster response scenario. Built to feel like real mission-control software (NASA Mission Control / SpaceX / air-traffic-control aesthetic), integrating frontend React visualization with a robust async FastAPI backend.
 
 ## Architecture
 
+RescueHive operates on a simulated telemetry loop where robots (in reality, mocked for demonstration) stream their statuses through the backend to the frontend.
+
 ```
-WebSocket (mock or real)
-   -> messageProducer / real socket frames
-   -> dispatch.ts (message parser)
-   -> Zustand stores (robotStore, detectionStore, missionStore, notificationStore)
-   -> React components (subscribed to only the slices they need)
+                          ┌─────────────────────┐
+                          │   FastAPI Backend   │
+                          │  REST + WebSocket   │
+                          └──────────┬──────────┘
+                                     │
+                           REST (Axios) + WS (native)
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ RescueHive Frontend │
+                          └─────────────────────┘
 ```
 
-Feature-based folder structure under `src/features/*` — each feature owns its
-pages and feature-specific components. Shared UI primitives live in
-`src/components/ui`, cross-feature components in `src/components/common`.
+## Tech Stack
 
-## Key product decisions worth knowing about
+### Frontend
+- **Framework**: React (Vite) + TypeScript
+- **Styling**: Tailwind CSS + Shadcn UI
+- **State Management**: Zustand
+- **Routing**: React Router
+- **Maps**: Leaflet (react-leaflet)
+- **Data Visualization**: Recharts
 
-- **Human-in-the-loop confirmation**: victim/hazard detections are never
-  visually presented as confirmed until a person accepts them (see
-  `detectionStore.ts` — `status` starts as `unconfirmed`).
-- **AI Report page** always displays "AI Generated Recommendation — For Human
-  Review Only" per the spec.
-- **Accessibility**: status is never conveyed by color alone — badges pair
-  color with icon + text label (see `HealthBadge`, `ConnectionDot`).
-- **Role-based dashboards** are genuinely different views (not just hidden
-  buttons) — Field Operator lands on a focused Mission page; Incident
-  Commander gets the full dashboard; Admin/Developer get operational tooling.
+### Backend
+- **Framework**: FastAPI (Python 3.11+) + Uvicorn
+- **Database**: SQLite (via aiosqlite for async, easily swappable to PostgreSQL)
+- **ORM**: SQLAlchemy 2.0 (async)
+- **Authentication**: JWT (Access & Refresh tokens) via PyJWT
+- **Validation**: Pydantic v2
+- **Realtime**: FastAPI native WebSockets with connection management and broadcast
 
-## Scripts
+## Features & Roles
 
-- `npm run dev` — start dev server
-- `npm run build` — type-check and production build
-- `npm run lint` — ESLint
-- `npm run preview` — preview the production build locally
+RescueHive uses role-based access control (RBAC). Each role gets a customized dashboard tailored to their operational needs.
 
-## Extending
+Log in with any of the demo accounts on the login screen (password for all: `demo1234`):
 
-This scaffold covers the full navigation surface described in the product
-spec. A few areas are intentionally left as clearly-marked placeholders ready
-for follow-up work: mission replay (Mission Details → Replay tab), thermal/
-depth camera streams (currently static placeholders per feed), and real push
-notifications (currently simulated via the WebSocket layer). Search
-`TODO`-style comments and the "Replay unavailable" state as starting points.
+| Role | Email | Experience / Focus |
+|---|---|---|
+| Incident Commander | `commander@rescuehive.io` | Dashboard (full picture, cross-mission analytics) |
+| Field Operator | `operator@rescuehive.io` | Live Mission (focused UI, robot tele-ops) |
+| System Administrator | `admin@rescuehive.io` | Admin Panel (user and fleet management) |
+| Developer | `dev@rescuehive.io` | System Health / real-time logs |
+| Support | `support@rescuehive.io` | Dashboard (read-focused, observational) |
+
+### Key Business Rules
+
+1. **Human-in-the-Loop Confirmation**: Victim and hazard detections generated by the AI (or robots) are *never* marked as confirmed automatically. They remain `unconfirmed` until a human operator explicitly accepts or rejects them.
+2. **AI Reports**: The AI Report page always displays a mandatory disclaimer: *"AI Generated Recommendation — For Human Review Only"*.
+3. **Role Enforcement**: Authorization is strictly enforced on the server-side via FastAPI dependencies.
+
+## Getting Started (Local Development)
+
+### 1. Start the Backend
+
+The backend uses SQLite by default, so you don't need to run a separate database server.
+
+```bash
+cd backend
+python -m venv venv
+# Windows: venv\Scripts\activate
+# Mac/Linux: source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+
+# Run the server (this will automatically create tables and seed demo data)
+uvicorn app.main:app --reload --port 8000
+```
+
+The API docs will be available at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+### 2. Start the Frontend
+
+In a new terminal window:
+
+```bash
+cd ../ # back to project root
+npm install
+
+# Copy .env.example to .env to point to the local backend
+cp .env.example .env
+
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+## Transitioning Frontend to Real Backend
+
+The frontend initially shipped with a full mock/simulation layer. To wire it fully to this FastAPI backend:
+
+1. **`src/services/websocket/mockSocket.ts`**: Replace the mock implementation with a real `WebSocket` connection to `VITE_WS_URL`.
+2. **`src/services/api/*.ts`**: Replace the mock `delay()` calls with actual `apiClient.get/post` requests.
+3. **`src/stores/authStore.ts`**: Swap the mock login for a `POST /auth/login` request using the `apiClient`.
+
+## WebSocket Contract
+
+The backend broadcasts messages to all connected clients over a single WebSocket endpoint (`ws://localhost:8000/ws?token=<jwt>`). The messages are JSON with a `type` discriminator:
+
+- `telemetry`: Continuous robot vitals (battery, speed, position).
+- `robot_status`: Event-driven state changes (health, task, connection).
+- `map_update`: Position and trail delta for map rendering.
+- `detection`: Broadcast when a victim or hazard is found or its status changes.
+- `mission_progress`: Overall mission coverage updates.
+
+## Extending the Project
+
+This scaffold provides a complete foundation. Areas primed for extension:
+- **Media Transcoding**: Setup a WebRTC/HLS server for actual live video streaming (currently returning placeholder stream URLs).
+- **Redis Pub/Sub**: Replace the in-process `ConnectionManager` with Redis Pub/Sub if deploying multiple FastAPI workers.
+- **PostgreSQL**: Swap the `DATABASE_URL` to PostgreSQL and add Alembic for database migrations in a production environment.

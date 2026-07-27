@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from "react-leaflet";
-import L from "leaflet";
+import { divIcon } from "leaflet";
 import { Layers, Maximize2, Compass } from "lucide-react";
 import { useRobotStore } from "@/stores/robotStore";
 import { useDetectionStore } from "@/stores/detectionStore";
@@ -9,14 +9,14 @@ import { Badge } from "@/components/ui/Badge";
 import { formatCoords, formatRelativeTime } from "@/utils/format";
 
 const robotIcon = (color: string) =>
-  L.divIcon({
+  divIcon({
     className: "",
     html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 8px ${color}"></div>`,
     iconSize: [14, 14],
   });
 
 const markerIcon = (color: string, symbol: string) =>
-  L.divIcon({
+  divIcon({
     className: "",
     html: `<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid white;"><span style="transform:rotate(45deg);font-size:11px;color:white;">${symbol}</span></div>`,
     iconSize: [22, 22],
@@ -39,7 +39,9 @@ export default function MapPage() {
           attribution='&copy; OpenStreetMap contributors &copy; CARTO'
         />
 
-        {robots.map((r) => (
+        {robots
+          .filter(r => r.position && typeof r.position.lat === "number")
+          .map((r) => (
           <Marker
             key={r.id}
             position={[r.position.lat, r.position.lng]}
@@ -57,7 +59,7 @@ export default function MapPage() {
 
         {showTrails &&
           robots
-            .filter((r) => trailVisibility[r.id])
+            .filter((r) => trailVisibility[r.id] && Array.isArray(r.trail))
             .map((r) => (
               <Polyline
                 key={`trail-${r.id}`}
@@ -67,7 +69,7 @@ export default function MapPage() {
             ))}
 
         {victims
-          .filter((v) => v.status !== "rejected")
+          .filter((v) => v.status !== "rejected" && v.position && typeof v.position.lat === "number")
           .map((v) => (
             <Marker key={v.id} position={[v.position.lat, v.position.lng]} icon={markerIcon("#EF4444", "V")}>
               <Popup>
@@ -81,7 +83,7 @@ export default function MapPage() {
           ))}
 
         {hazards
-          .filter((h) => h.status !== "rejected")
+          .filter((h) => h.status !== "rejected" && h.position && typeof h.position.lat === "number")
           .map((h) => (
             <Marker key={h.id} position={[h.position.lat, h.position.lng]} icon={markerIcon("#F59E0B", "!")}>
               <Popup>
@@ -95,7 +97,9 @@ export default function MapPage() {
           ))}
 
         {showHeat &&
-          victims.slice(0, 15).map((v) => (
+          victims
+            .filter(v => v.position && typeof v.position.lat === "number")
+            .slice(0, 15).map((v) => (
             <CircleMarker
               key={`heat-${v.id}`}
               center={[v.position.lat, v.position.lng]}

@@ -1,7 +1,27 @@
+# Dependencies
 node_modules
+frontend/node_modules
+
+# Production builds
 dist
 dist-ssr
-*.local
+frontend/dist
+
+# Environment variables & secrets
 .env
-.DS_Store
+.env.local
+frontend/.env
+*.local
+
+# Logs and OS files
 *.log
+.DS_Store
+.vscode/
+.idea/
+
+# Backend (Ignored - Frontend only push)
+backend/
+venv/
+.venv/
+*.db
+__pycache__/

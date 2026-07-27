@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/types/domain";
-import { MOCK_USERS } from "@/utils/mockData";
+import { apiClient } from "@/services/api/client";
 
 interface AuthState {
   user: User | null;
@@ -20,20 +20,25 @@ export const useAuthStore = create<AuthState>()(
       rememberMe: false,
       isAuthenticated: false,
       login: async (email, password, rememberMe) => {
-        // Simulated network latency + JWT issuance.
-        await new Promise((r) => setTimeout(r, 650));
-        const record = MOCK_USERS[email.toLowerCase()];
-        if (!record || record.password !== password) {
-          return { success: false, error: "Invalid email or password." };
+        try {
+          const { data } = await apiClient.post("/auth/login", {
+            email,
+            password,
+            remember_me: rememberMe,
+          });
+          set({
+            user: data.user,
+            token: data.accessToken,
+            rememberMe,
+            isAuthenticated: true,
+          });
+          return { success: true };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.response?.data?.error?.message || "Login failed.",
+          };
         }
-        const { password: _pw, ...user } = record;
-        set({
-          user,
-          token: `mock.jwt.${user.id}.${Date.now()}`,
-          rememberMe,
-          isAuthenticated: true,
-        });
-        return { success: true };
       },
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
     }),

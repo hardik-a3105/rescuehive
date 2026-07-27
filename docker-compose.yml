@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/rescuehive.db
+      - JWT_SECRET=dev-secret-key-1234
+      - CORS_ORIGINS=http://localhost:5173
+      - SEED_ON_STARTUP=1
+    volumes:
+      - ./backend/data:/app/data
+    depends_on:
+      - frontend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api
+      - VITE_WS_URL=ws://localhost:8000/ws
