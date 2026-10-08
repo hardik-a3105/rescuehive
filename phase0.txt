@@ -1,0 +1,254 @@
+# RescueHive — Phase 0: Project Foundation
+
+You are working on a college project called:
+
+**RescueHive — AI-Powered Multi-Robot Disaster Intelligence System**
+
+Read and follow the project architecture described below carefully.
+
+## IMPORTANT PROJECT BOUNDARY
+
+This project has two major parts:
+
+1. **RescueHive Platform** — MY responsibility
+
+   * React frontend
+   * FastAPI backend
+   * PostgreSQL database
+   * AI/CV pipeline
+   * Mission management
+   * Authentication
+   * Dashboard
+   * APIs
+   * Integration with an external Webots simulator
+
+2. **Webots Multi-Robot Simulator** — handled by another team member
+
+   * DO NOT build the Webots simulation.
+   * DO NOT create robot controllers.
+   * DO NOT implement SLAM/navigation inside this project yet.
+   * Assume the simulator will later expose APIs/WebSocket endpoints that RescueHive can connect to.
+
+The external simulator will be integrated in a later phase.
+
+---
+
+# PHASE 0 OBJECTIVE
+
+Create only the clean, scalable project foundation.
+
+Do NOT implement the full dashboard, AI, simulator integration, or business logic yet.
+
+The purpose of this phase is to establish a professional project structure that later phases can build upon.
+
+---
+
+# TECHNOLOGY STACK
+
+Frontend:
+
+* React
+* Vite
+* Tailwind CSS
+* shadcn/ui
+* React Router
+* Lucide React icons
+
+Backend:
+
+* Python 3
+* FastAPI
+* Pydantic
+* SQLAlchemy
+* PostgreSQL
+
+Development:
+
+* Git
+* GitHub
+* Docker-ready architecture
+* `.env` configuration
+
+---
+
+# REQUIRED PROJECT STRUCTURE
+
+Create this structure:
+
+rescuehive/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── layouts/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   ├── types/
+│   │   ├── utils/
+│   │   ├── mock/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   │
+│   ├── public/
+│   ├── package.json
+│   ├── vite.config.js
+│   └── ...
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── v1/
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   ├── db/
+│   │   ├── websocket/
+│   │   └── main.py
+│   │
+│   ├── tests/
+│   ├── requirements.txt
+│   └── ...
+│
+├── ai/
+│   ├── detection/
+│   ├── segmentation/
+│   ├── depth/
+│   └── models/
+│
+├── simulator/
+│   └── README.md
+│
+├── docs/
+│
+├── .env.example
+├── .gitignore
+├── README.md
+└── docker-compose.yml
+
+---
+
+# FRONTEND SETUP
+
+Initialize the React + Vite application.
+
+Configure:
+
+* Tailwind CSS
+* shadcn/ui
+* React Router
+* Lucide React
+
+Create a basic application shell.
+
+Do not build the complete dashboard yet.
+
+The application should start successfully with:
+
+npm run dev
+
+---
+
+# BACKEND SETUP
+
+Create a FastAPI application.
+
+The backend must start successfully using:
+
+uvicorn app.main:app --reload
+
+Create:
+
+GET /api/v1/health
+
+Response:
+
+{
+"status": "ok",
+"service": "rescuehive-backend"
+}
+
+Configure CORS for local frontend development.
+
+Create configuration handling through environment variables.
+
+Example:
+
+DATABASE_URL=
+JWT_SECRET=
+FRONTEND_URL=
+ENVIRONMENT=development
+
+Do not implement authentication yet.
+
+Do not implement database models yet.
+
+---
+
+# DATABASE FOUNDATION
+
+Prepare the backend architecture for PostgreSQL using SQLAlchemy.
+
+Do not create the complete schema yet.
+
+Create the database configuration files and connection layer so that Phase 2 can add models easily.
+
+---
+
+# SIMULATOR PLACEHOLDER
+
+Create:
+
+simulator/README.md
+
+Explain that the Webots simulator is an external system maintained by another team member.
+
+The future integration will happen through APIs/WebSockets.
+
+Do not implement the simulator now.
+
+---
+
+# DOCUMENTATION
+
+Create a README containing:
+
+* Project name
+* Project purpose
+* Technology stack
+* Project architecture
+* Folder structure
+* How to run frontend
+* How to run backend
+* Current phase
+* Future phases
+
+Clearly state:
+
+"Webots simulation is external to this repository and will be integrated through APIs in a later phase."
+
+---
+
+# IMPORTANT RULES
+
+Do NOT:
+
+* Build Webots
+* Build robot controllers
+* Build AI models
+* Build YOLO
+* Build SAM 2
+* Build MiDaS
+* Build PostgreSQL tables
+* Build authentication
+* Build mission logic
+* Build WebSocket telemetry
+* Add unnecessary libraries
+* Create fake APIs that pretend to connect to Webots
+
+Keep this phase clean and minimal.
+
+At the end, verify that both frontend and backend can start successfully.
+
+Do not move to Phase 1 automatically.

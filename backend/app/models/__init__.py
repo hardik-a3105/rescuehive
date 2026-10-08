@@ -1,6 +1,4 @@
-from app.models.user import UserModel  # noqa: F401
-from app.models.mission import MissionModel  # noqa: F401
-from app.models.robot import RobotModel, RobotTelemetryModel  # noqa: F401
-from app.models.detection import VictimDetectionModel, HazardDetectionModel  # noqa: F401
-from app.models.notification import NotificationModel  # noqa: F401
-from app.models.log import LogEntryModel  # noqa: F401
+from .base import Base
+
+# Phase 0: Placeholder for models to be defined in Phase 2
+__all__ = ["Base"]

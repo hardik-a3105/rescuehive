@@ -1,91 +1,58 @@
-"""
-FastAPI application factory.
-"""
-
-import asyncio
 import logging
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import RedirectResponse
 
-from app.config import settings
-from app.database import engine, Base, async_session
-from app.routers import (
-    admin,
-    analytics,
-    auth,
-    detections,
-    missions,
-    notifications,
-    robots,
-    system,
-    ws,
-)
-from app.services.seed import seed_database
-from app.services.ws_manager import heartbeat_loop
-from app.utils import AppError, app_error_handler
+from app.core.config import settings
+from app.api.v1.api import api_router
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+)
 logger = logging.getLogger("rescuehive")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    # Seed data if enabled
-    if settings.SEED_ON_STARTUP:
-        async with async_session() as db:
-            await seed_database(db)
-
-    # Start WebSocket heartbeat task
-    heartbeat_task = asyncio.create_task(heartbeat_loop())
-
+    """
+    Application lifespan manager.
+    Initializes system foundation during startup and handles graceful shutdown.
+    """
+    logger.info("Starting RescueHive backend in '%s' environment", settings.ENVIRONMENT)
+    logger.info("Interactive docs available at /docs")
+    logger.info("API prefix mounted at '%s'", settings.API_V1_STR)
     yield
-
-    # Teardown
-    heartbeat_task.cancel()
-    await engine.dispose()
+    logger.info("Shutting down RescueHive backend")
 
 
+# Initialize FastAPI application
 app = FastAPI(
-    title="RescueHive API",
-    description="Backend for the RescueHive disaster intelligence platform.",
-    version="1.0.0",
+    title=settings.PROJECT_NAME,
+    description="Backend API for RescueHive — AI-Powered Multi-Robot Disaster Intelligence System",
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
 )
 
-# CORS
+# Configure Cross-Origin Resource Sharing (CORS) for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Exception handlers
-app.add_exception_handler(AppError, app_error_handler)
+# Mount API v1 routes
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-# Public health check
-@app.get("/api/health", tags=["system"])
-async def health_check():
-    return JSONResponse(content={"status": "ok"})
-
-
-# Mount routers
-app.include_router(auth.router, prefix="/api")
-app.include_router(missions.router, prefix="/api")
-app.include_router(robots.router, prefix="/api")
-app.include_router(detections.router, prefix="/api")
-app.include_router(notifications.router, prefix="/api")
-app.include_router(analytics.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
-app.include_router(system.router, prefix="/api")
-app.include_router(ws.router)
+@app.get("/", include_in_schema=False)
+async def root_redirect():
+    """Redirect root path to interactive API documentation."""
+    return RedirectResponse(url="/docs")
