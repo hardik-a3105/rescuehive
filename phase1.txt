@@ -1,0 +1,448 @@
+# RescueHive — Phase 1: Command Center Dashboard UI
+
+Continue development of the existing RescueHive project.
+
+Phase 0 has already created the project foundation.
+
+Now build the **frontend Command Center Dashboard**.
+
+---
+
+# IMPORTANT
+
+This is a FRONTEND-ONLY phase.
+
+Use mock/static data.
+
+DO NOT connect to:
+
+* Webots
+* FastAPI APIs
+* PostgreSQL
+* YOLO
+* SAM 2
+* MiDaS
+* real robot hardware
+
+The purpose is to complete and polish the dashboard UI before connecting real systems.
+
+All mock information must be clearly treated as simulation/demo data.
+
+---
+
+# UI GOAL
+
+Create a professional disaster-response command center dashboard.
+
+The dashboard should feel like a real emergency robotics control system.
+
+Use:
+
+* React
+* Tailwind CSS
+* shadcn/ui
+* Lucide icons
+* React Router
+
+Design should be:
+
+* dark command-center style
+* professional
+* clean
+* information-dense but readable
+* responsive
+* suitable for desktop/laptop
+* not overly colorful
+* strong visual hierarchy
+
+---
+
+# APPLICATION PAGES
+
+Create these routes:
+
+/login
+
+/dashboard
+
+/robots
+
+/detections
+
+/missions
+
+/reports
+
+/settings
+
+For now, navigation can work without real authentication.
+
+---
+
+# MAIN DASHBOARD
+
+Create:
+
+## Top Navigation
+
+Show:
+
+* RescueHive logo/name
+* Mission status
+* current mission name
+* connection indicator
+* notification icon
+* user profile
+
+Example:
+
+MISSION ACTIVE
+SIMULATION MODE
+3 ROBOTS ONLINE
+
+---
+
+# SIDEBAR
+
+Navigation:
+
+* Command Center
+* Robots
+* Detections
+* Missions
+* Reports
+* Settings
+
+At bottom:
+
+* system status
+* logged-in user
+* logout button
+
+---
+
+# COMMAND CENTER
+
+Create a dashboard containing:
+
+## 1. Mission Summary
+
+Cards:
+
+* Mission status
+* Mission duration
+* Robots active
+* Area explored
+* Victims detected
+* Hazards detected
+
+---
+
+## 2. LIVE MAP
+
+Create a large map area.
+
+For this phase, use mock data.
+
+Display:
+
+* 3 simulated robots
+* robot positions
+* robot names
+* exploration paths
+* victim markers
+* hazard markers
+* explored area
+
+Use Leaflet if practical.
+
+The map must clearly display:
+
+**SIMULATION / MOCK DATA**
+
+Do not pretend the data is coming from Webots.
+
+---
+
+## 3. ROBOT STATUS
+
+Show cards/table for:
+
+Robot Alpha
+Robot Bravo
+Robot Charlie
+
+Each should show:
+
+* status
+* battery
+* connection
+* current task
+* position
+* explored area
+
+Example statuses:
+
+ACTIVE
+EXPLORING
+RETURNING
+OFFLINE
+
+---
+
+## 4. DETECTION PANEL
+
+Show recent detections.
+
+Example:
+
+Victim detected
+Fire detected
+Gas cylinder detected
+Debris detected
+Emergency exit detected
+
+Each detection should contain:
+
+* type
+* confidence
+* robot
+* timestamp
+* status
+
+Statuses:
+
+CONFIRMED
+PENDING
+DISMISSED
+
+---
+
+## 5. ALERT PANEL
+
+Create an emergency alert section.
+
+Example:
+
+HIGH — Fire detected by Robot Alpha
+
+MEDIUM — Robot Bravo battery below threshold
+
+LOW — Possible victim detected
+
+Use appropriate icons and visual priority.
+
+---
+
+## 6. MISSION PROGRESS
+
+Show:
+
+* exploration percentage
+* mission duration
+* detected victims
+* detected hazards
+* robots active
+
+Use progress bars and statistics.
+
+---
+
+# ROBOTS PAGE
+
+Create a detailed robot monitoring page.
+
+For each robot show:
+
+* robot ID
+* status
+* battery
+* connection
+* position
+* current task
+* explored area
+* detections
+
+Add buttons:
+
+* Pause
+* Resume
+* Return to Base
+* Retask
+
+These buttons should only demonstrate UI behavior for now.
+
+Do not connect them to any backend.
+
+---
+
+# DETECTIONS PAGE
+
+Create a detection management interface.
+
+Include:
+
+* filter by type
+* filter by robot
+* filter by confidence
+* filter by status
+
+Detection table:
+
+Timestamp | Robot | Type | Confidence | Location | Status | Action
+
+Actions:
+
+Confirm
+Dismiss
+View
+
+Use mock data.
+
+---
+
+# MISSIONS PAGE
+
+Create:
+
+* mission list
+* mission status
+* start date
+* duration
+* robot count
+* explored area
+
+Include a mission details page/panel.
+
+Buttons:
+
+Start Mission
+Pause Mission
+Stop Mission
+
+Again, UI only.
+
+---
+
+# REPORTS PAGE
+
+Create a placeholder interface for future AI-generated mission reports.
+
+Show:
+
+* mission summary
+* victims detected
+* hazards detected
+* explored area
+* mission duration
+* recommended rescue order
+* recommended safe route
+
+Clearly label recommendations:
+
+"AI Recommendation — Human decision required"
+
+No LLM integration yet.
+
+---
+
+# SETTINGS PAGE
+
+Create basic settings:
+
+* user profile
+* system preferences
+* notification settings
+* dashboard settings
+* connection settings
+
+Do not implement real authentication or backend persistence.
+
+---
+
+# MOCK DATA
+
+Create reusable mock data files.
+
+Example:
+
+mockRobots.js
+mockDetections.js
+mockMissions.js
+mockAlerts.js
+
+Keep mock data separate from UI components.
+
+Do not hardcode large datasets directly inside components.
+
+---
+
+# COMPONENT ARCHITECTURE
+
+Create reusable components:
+
+DashboardCard
+StatusBadge
+RobotCard
+RobotTable
+DetectionTable
+AlertCard
+MissionProgress
+MapView
+Sidebar
+Topbar
+PageHeader
+EmptyState
+LoadingState
+Modal
+ConfirmDialog
+
+Keep components modular.
+
+---
+
+# RESPONSIVENESS
+
+The dashboard should work properly on:
+
+* desktop
+* laptop
+* tablet
+
+Prioritize desktop because this is a command-center application.
+
+---
+
+# IMPORTANT RULES
+
+DO NOT:
+
+* connect to FastAPI
+* connect to PostgreSQL
+* connect to Webots
+* implement WebSocket
+* implement YOLO
+* implement AI detection
+* implement real authentication
+* create fake backend endpoints
+
+Only build the frontend and mock-data layer.
+
+---
+
+# SUCCESS CONDITION
+
+When Phase 1 is complete:
+
+1. Frontend runs successfully.
+2. All routes work.
+3. Dashboard looks professional.
+4. Mock robots appear on the map.
+5. Mock detections appear.
+6. Mock alerts appear.
+7. Mission UI works.
+8. Robot controls respond visually.
+9. No backend dependency exists.
+10. The entire interface clearly indicates simulation/mock data.
+
+Do not start Phase 2 automatically.
