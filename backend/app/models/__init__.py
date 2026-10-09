@@ -1,4 +1,19 @@
 from .base import Base
+from .domain import (
+    User, UserRole,
+    Mission, MissionStatus,
+    Robot, RobotStatus, ConnectionStatus,
+    Detection, DetectionType, DetectionStatus,
+    Alert, AlertSeverity, AlertStatus,
+    MissionEvent,
+)
 
-# Phase 0: Placeholder for models to be defined in Phase 2
-__all__ = ["Base"]
+__all__ = [
+    "Base",
+    "User", "UserRole",
+    "Mission", "MissionStatus",
+    "Robot", "RobotStatus", "ConnectionStatus",
+    "Detection", "DetectionType", "DetectionStatus",
+    "Alert", "AlertSeverity", "AlertStatus",
+    "MissionEvent",
+]

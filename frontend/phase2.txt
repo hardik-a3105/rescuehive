@@ -1,0 +1,451 @@
+# RescueHive — Phase 2: FastAPI Backend and PostgreSQL
+
+Continue development of RescueHive.
+
+Phase 0 created the project foundation.
+
+Phase 1 created the frontend dashboard using mock data.
+
+Now implement the **real backend foundation**.
+
+---
+
+# IMPORTANT PROJECT BOUNDARY
+
+The Webots simulator is NOT part of this phase.
+
+It is maintained separately by another team member.
+
+Do not implement Webots.
+
+Do not create robot controllers.
+
+Do not create simulator-specific assumptions.
+
+The backend should expose clean APIs that can later receive simulator data.
+
+---
+
+# TECHNOLOGY
+
+Backend:
+
+* Python
+* FastAPI
+* SQLAlchemy
+* PostgreSQL
+* Pydantic
+* JWT
+* bcrypt/passlib or an appropriate password hashing library
+
+Use API versioning:
+
+/api/v1/
+
+---
+
+# DATABASE
+
+Connect FastAPI to PostgreSQL.
+
+Create these main entities:
+
+## User
+
+Fields:
+
+* id
+* name
+* email
+* password_hash
+* role
+* created_at
+* updated_at
+
+Roles:
+
+FIELD_OPERATOR
+INCIDENT_COMMANDER
+ADMIN
+
+---
+
+## Mission
+
+Fields:
+
+* id
+* name
+* description
+* status
+* started_at
+* ended_at
+* duration
+* explored_area
+* created_by
+* created_at
+
+Statuses:
+
+PLANNED
+ACTIVE
+PAUSED
+COMPLETED
+ABORTED
+
+---
+
+## Robot
+
+Fields:
+
+* id
+* robot_id
+* name
+* status
+* battery
+* connection_status
+* x
+* y
+* z
+* current_task
+* last_seen
+* mission_id
+
+---
+
+## Detection
+
+Fields:
+
+* id
+* mission_id
+* robot_id
+* detection_type
+* confidence
+* x
+* y
+* z
+* image_path
+* status
+* timestamp
+
+Detection types should support:
+
+* PERSON
+* FIRE
+* GAS_CYLINDER
+* HELMET
+* DEBRIS
+* EMERGENCY_EXIT
+* BACKPACK
+
+Statuses:
+
+PENDING
+CONFIRMED
+DISMISSED
+
+---
+
+## Alert
+
+Fields:
+
+* id
+* mission_id
+* robot_id
+* severity
+* title
+* message
+* status
+* created_at
+
+Severity:
+
+LOW
+MEDIUM
+HIGH
+CRITICAL
+
+---
+
+## Mission Event
+
+Fields:
+
+* id
+* mission_id
+* robot_id
+* event_type
+* message
+* timestamp
+
+---
+
+# IMPORTANT IMAGE STORAGE RULE
+
+Do NOT store image/video binary data inside PostgreSQL.
+
+Store files on the filesystem.
+
+Only store:
+
+image_path
+
+inside the database.
+
+This follows the project architecture.
+
+---
+
+# AUTHENTICATION
+
+Implement JWT authentication.
+
+Create:
+
+POST /api/v1/auth/register
+
+POST /api/v1/auth/login
+
+GET /api/v1/auth/me
+
+Passwords must never be stored in plain text.
+
+Use password hashing.
+
+Implement role-based authorization.
+
+---
+
+# MISSION APIs
+
+Create:
+
+GET /api/v1/missions
+
+POST /api/v1/missions
+
+GET /api/v1/missions/{mission_id}
+
+PUT /api/v1/missions/{mission_id}
+
+DELETE /api/v1/missions/{mission_id}
+
+Mission control endpoints:
+
+POST /api/v1/missions/{mission_id}/start
+
+POST /api/v1/missions/{mission_id}/pause
+
+POST /api/v1/missions/{mission_id}/resume
+
+POST /api/v1/missions/{mission_id}/stop
+
+---
+
+# ROBOT APIs
+
+Create:
+
+GET /api/v1/robots
+
+GET /api/v1/robots/{robot_id}
+
+POST /api/v1/robots
+
+PUT /api/v1/robots/{robot_id}
+
+DELETE /api/v1/robots/{robot_id}
+
+Robot commands should be represented as backend services.
+
+Do not connect to Webots yet.
+
+---
+
+# DETECTION APIs
+
+Create:
+
+GET /api/v1/detections
+
+GET /api/v1/detections/{detection_id}
+
+POST /api/v1/detections
+
+PATCH /api/v1/detections/{detection_id}/confirm
+
+PATCH /api/v1/detections/{detection_id}/dismiss
+
+Support filtering by:
+
+* mission
+* robot
+* type
+* status
+* confidence
+
+---
+
+# ALERT APIs
+
+Create:
+
+GET /api/v1/alerts
+
+PATCH /api/v1/alerts/{alert_id}/acknowledge
+
+---
+
+# DASHBOARD API
+
+Create an endpoint that returns aggregated mission information.
+
+GET /api/v1/dashboard/summary
+
+Return:
+
+* active mission
+* active robots
+* explored area
+* victim count
+* hazard count
+* active alerts
+* mission duration
+
+---
+
+# HEALTH API
+
+Create:
+
+GET /api/v1/health
+
+Return:
+
+{
+"status": "ok",
+"service": "rescuehive-backend"
+}
+
+---
+
+# ARCHITECTURE
+
+Keep business logic outside route files.
+
+Use:
+
+routes
+schemas
+models
+services
+repositories/database layer
+
+Do not put everything inside main.py.
+
+---
+
+# ERROR HANDLING
+
+Implement clean API errors.
+
+Examples:
+
+404 — resource not found
+
+400 — invalid request
+
+401 — unauthenticated
+
+403 — insufficient permissions
+
+500 — internal server error
+
+Use consistent response formats.
+
+---
+
+# CORS
+
+Allow the React frontend to communicate with FastAPI during development.
+
+Use environment configuration.
+
+---
+
+# DATABASE MIGRATIONS
+
+Prepare the project for Alembic migrations.
+
+Create the initial migration.
+
+Do not rely on manually recreating tables every time the server starts.
+
+---
+
+# SEED DATA
+
+Create an optional development seed script.
+
+It should create:
+
+* demo users
+* one demo mission
+* 3 demo robots
+* several demo detections
+* several alerts
+
+Clearly mark these as development/demo data.
+
+---
+
+# TESTING
+
+Create basic backend tests for:
+
+* health endpoint
+* authentication
+* mission creation
+* robot retrieval
+* detection creation
+* authorization
+
+---
+
+# IMPORTANT RULES
+
+DO NOT:
+
+* implement Webots
+* implement simulator communication
+* implement YOLO
+* implement SAM2
+* implement MiDaS
+* implement LLM
+* implement real robot navigation
+
+This phase is only:
+
+**FastAPI + PostgreSQL + authentication + core REST APIs**
+
+---
+
+# SUCCESS CONDITION
+
+The backend must:
+
+1. Start successfully.
+2. Connect to PostgreSQL.
+3. Run migrations.
+4. Authenticate users.
+5. Create/read/update missions.
+6. Manage robots.
+7. Manage detections.
+8. Manage alerts.
+9. Return dashboard summary data.
+10. Pass basic tests.
+
+Do not start Phase 3 automatically.
