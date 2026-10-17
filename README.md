@@ -28,31 +28,106 @@ RescueHive is a next-generation disaster intelligence and mission command platfo
 
 ---
 
-## 3. Project Architecture
+## 3. System Architecture
+
+RescueHive is structured as a decoupled, multi-tier disaster command and intelligence system built for high reliability, local-first execution, and real-time operational awareness.
+
+### 3.1 High-Level Architecture Diagram
 
 ```
-                          ┌────────────────────────┐
-                          │   RescueHive Frontend   │
-                          │   (React + Vite + UI)  │
-                          └───────────┬────────────┘
-                                      │
-                            REST & WebSocket APIs
-                                      │
-                                      ▼
-                          ┌────────────────────────┐
-                          │    FastAPI Backend     │
-                          │  (Auth, DB, Telemetry) │
-                          └─────┬────────────┬─────┘
-                                │            │
-                 PostgreSQL DB ─┘            └── AI / CV Pipeline
-           (SQLAlchemy Engine)                    (Future Phase)
-                                                     │
-                                                     ▼
-                                      ┌────────────────────────┐
-                                      │ External Webots Sim    │
-                                      │ (External Team Member) │
-                                      └────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           PRESENTATION & COMMAND LAYER                          │
+│                                                                                 │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │                     RescueHive React 18 + Vite SPA                      │   │
+│   │                                                                         │   │
+│   │   [Tactical Map / GIS]   [Fleet Status Cards]   [AI Detections Queue]   │   │
+│   │   [Mission Objectives]   [Printable AI Reports] [Workstation Settings]  │   │
+│   │                                                                         │   │
+│   │   State:  AuthContext  │  MissionContext  │  SettingsContext (Theme/UI) │   │
+│   │   Shell:  Stationary Desktop Sidebar (100vh)  │  Mobile Responsive Bar  │   │
+│   └────────────────────────────────────┬────────────────────────────────────┘   │
+└────────────────────────────────────────┼────────────────────────────────────────┘
+                                         │
+                               REST HTTP │ & WebSocket
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        BACKEND APPLICATION LAYER (FastAPI)                      │
+│                                                                                 │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │                      FastAPI Async Gateway (ASGI)                       │   │
+│   │                                                                         │   │
+│   │   /api/v1/auth        - JWT Authentication & RBAC (Commander / Operator)│   │
+│   │   /api/v1/missions    - Mission Lifecycle & Tactical Objectives         │   │
+│   │   /api/v1/robots      - Swarm Fleet Registry & Hardware Status          │   │
+│   │   /api/v1/detections  - AI Detections Triage & Human Review Queue       │   │
+│   │   /api/v1/ai          - Multimodal Vision Analysis Engine               │   │
+│   │   /api/v1/ws          - Real-Time Bidirectional Telemetry Streams       │   │
+│   │                                                                         │   │
+│   │   Services:  MissionService │ RobotService │ DetectionService           │   │
+│   │              VisionAnalysisService │ WebSocketConnectionManager         │   │
+│   └─────────────────────┬─────────────────────────────┬─────────────────────┘   │
+└─────────────────────────┼─────────────────────────────┼─────────────────────────┘
+                          │                             │
+                          │ SQL (SQLAlchemy 2.0)        │ HTTP REST (Port 11434)
+                          ▼                             ▼
+┌───────────────────────────────────┐         ┌───────────────────────────────────┐
+│      DATA PERSISTENCE LAYER       │         │   LOCAL VISION AI ENGINE (OLLAMA) │
+│                                   │         │                                   │
+│   PostgreSQL Relational Database  │         │   Local Ollama Daemon (Host/GPU)  │
+│                                   │         │                                   │
+│   - Users & Auth Credentials      │         │   Model: Gemma 3 4B (Vision LLM)  │
+│   - Swarm Robots & Hardware State │         │   - Zero cloud API dependency     │
+│   - Missions & Spatial Boundaries │         │   - Multimodal prompt engineering │
+│   - High-Frequency Telemetry Logs │         │   - Structured JSON scene parsing │
+│   - AI Detections & Confirmations │         │   - Triage of victims & hazards   │
+│   - Alembic Versioned Migrations  │         │   - Human-in-the-loop review flow │
+└───────────────────────────────────┘         └───────────────────────────────────┘
+                                                        ▲
+                                                        │ Camera Frames / Sensor Feeds
+                                                        │
+                                      ┌─────────────────┴─────────────────┐
+                                      │   EXTERNAL SIMULATION & ROBOTICS  │
+                                      │                                   │
+                                      │   Webots Multi-Robot Simulator    │
+                                      │   (External Team Boundary)        │
+                                      │   - Aerial Drones (UAVs)          │
+                                      │   - Ground Rovers (UGVs)          │
+                                      │   - Synthesized LiDAR & GPS       │
+                                      └───────────────────────────────────┘
 ```
+
+### 3.2 Architectural Layers & Responsibilities
+
+1. **Presentation & Command Layer (Frontend)**:
+   - Built with **React 18**, **Vite**, and **Tailwind CSS**.
+   - **Stationary Viewport Shell**: Pinned desktop sidebar (`100vh`) with independent content scrolling; responsive collapsible drawer for field tablets and mobile screens.
+   - **Unified State Management**: Four reactive contexts (`AuthContext`, `MissionContext`, `SettingsContext`, `ThemeContext`) coordinating live telemetry, user sessions, active missions, and workstation display preferences.
+   - **Tactical Field Flexibility**:
+     - Instant dark/light theme switching with `localStorage` persistence.
+     - Universal dynamic metric/imperial unit conversion (`m²` ⇄ `sq ft`, `m/s` ⇄ `mph`, `°C` ⇄ `°F`).
+     - Web Audio API acoustic chimes for critical alerts.
+     - `@media print` stylesheets formatting mission debriefs into browser-native PDFs with human verification advisory banners.
+
+2. **API & Communication Gateway (FastAPI Backend)**:
+   - High-performance asynchronous REST API powered by **Uvicorn** and **Pydantic v2**.
+   - **Role-Based Access Control (RBAC)**: Secure JWT authentication enforcing least privilege (Incident Commander vs Field Operator).
+   - **WebSocket Connection Manager**: Low-latency bidirectional broadcasting for swarm telemetry, waypoint navigation, and emergency abort signals.
+   - **Modular Service Layer**: Decoupled domain services (`MissionService`, `DetectionService`, `RobotService`, `VisionAnalysisService`) handling business validation and database transactions.
+
+3. **Local AI & Multimodal Vision Intelligence**:
+   - **Local-First Deployment**: Runs locally via **Ollama** (`gemma3:4b`), requiring zero external internet access or proprietary third-party cloud APIs — critical for air-gapped disaster operations.
+   - **Scene Understanding**: Ingests disaster imagery up to 10MB, extracting structured JSON summaries, casualty triage classifications, hazard alerts (fire, debris, gas leaks), and qualitative confidence assessments.
+   - **Human-in-the-Loop Protocol**: All automated detections enter an initial `PENDING` state and require operator verification (`CONFIRMED` or `DISMISSED`), safeguarding against hallucinations.
+
+4. **Data Persistence Layer (PostgreSQL & SQLAlchemy)**:
+   - Relational database schema with declarative models managed via **SQLAlchemy 2.0**.
+   - Database migrations tracked and versioned using **Alembic**.
+   - Containerized deployment through Docker Compose for consistent local development and staging environments.
+
+5. **External Simulator Boundary**:
+   - Clean API boundary separating the command intelligence platform from the **Webots** robotics physics simulation.
+   - External simulator nodes ingest mission waypoints and emit simulated hardware telemetry (battery %, GPS coordinates, motor health, and camera captures) over standardized REST/WebSocket contracts.
 
 ---
 
