@@ -1,21 +1,22 @@
 """
-RescueHive — Development Seed Data Script
-==========================================
-Creates demo users, missions, robots, detections, and alerts
-for local development and testing.
+RescueHive — Deterministic Development Seed Data Script
+======================================================
+Populates the database with the simplified testing data:
+- 3 Demo Robots (Alpha: ACTIVE, Bravo: IDLE, Charlie: OFFLINE)
+- 2 Demo Missions (Basic Exploration: ACTIVE, Victim Detection Test: PLANNED)
+- 2 Sample Detections (Victim: 92% PENDING, Fire: 88% PENDING)
+- 1 Sample Alert (Fire detected: HIGH, ACTIVE)
 
 Usage:
     cd backend
     python -m app.db.seed
-
-WARNING: This script is for DEVELOPMENT ONLY.
 """
 
 import sys
 import os
 from datetime import datetime, timezone, timedelta
 
-# Ensure the backend directory is on the Python path
+# Ensure backend directory is in python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from dotenv import load_dotenv
@@ -23,7 +24,7 @@ load_dotenv()
 
 from app.db.session import SessionLocal, engine
 from app.db.base import Base
-import app.db.base_class  # noqa: F401 — register all models
+import app.db.base_class  # noqa: F401 — register models
 
 from app.models.domain import (
     User, UserRole,
@@ -37,21 +38,21 @@ from app.core.security import hash_password
 
 
 def seed():
-    """Populate the database with development demo data."""
+    """Populate database with simplified deterministic testing data."""
     print("=" * 60)
-    print("  RescueHive — Seeding Development Data")
+    print("  RescueHive — Seeding Simplified Test Data")
     print("=" * 60)
 
-    # Create tables
-    print("\n[1/6] Creating database tables...")
+    # Verify tables
+    print("\n[1/6] Verifying database schema...")
     Base.metadata.create_all(bind=engine)
-    print("  ✓ Tables created / verified")
+    print("  ✓ Schema verified")
 
     db = SessionLocal()
 
     try:
-        # ─── Demo Users ──────────────────────────────────────
-        print("\n[2/6] Creating demo users...")
+        # ─── 1. Demo Users (Preserved) ────────────────────────
+        print("\n[2/6] Verifying user credentials...")
         users = []
         user_data = [
             {"name": "Admin User", "email": "admin@rescuehive.dev", "password": "admin123", "role": UserRole.ADMIN},
@@ -62,7 +63,7 @@ def seed():
         for ud in user_data:
             existing = db.query(User).filter(User.email == ud["email"]).first()
             if existing:
-                print(f"  → User '{ud['email']}' already exists, skipping")
+                print(f"  → User '{ud['email']}' exists, preserved")
                 users.append(existing)
             else:
                 user = User(
@@ -76,177 +77,191 @@ def seed():
                 users.append(user)
                 print(f"  ✓ Created user: {ud['email']} ({ud['role'].value})")
 
+        commander_user = users[1]
         db.commit()
 
-        # ─── Demo Mission ────────────────────────────────────
-        print("\n[3/6] Creating demo mission...")
-        existing_mission = db.query(Mission).filter(Mission.name == "Operation Phoenix Rising").first()
-        if existing_mission:
-            mission = existing_mission
-            print("  → Mission already exists, skipping")
-        else:
-            mission = Mission(
-                name="Operation Phoenix Rising",
-                description="Multi-robot search and rescue operation in collapsed parking structure. "
-                            "Deploying ground and aerial units for systematic floor-by-floor sweep.",
-                status=MissionStatus.ACTIVE,
-                started_at=datetime.now(timezone.utc) - timedelta(hours=2, minutes=34),
-                explored_area=1847.5,
-                created_by=users[1].id,  # Commander
-            )
-            db.add(mission)
-            db.flush()
-            print(f"  ✓ Created mission: {mission.name}")
+        # ─── 2. Clean Up Prior Demo Sortie Data ───────────────
+        print("\n[3/6] Clearing previous demo sortie records...")
+        db.query(Alert).delete()
+        db.query(Detection).delete()
+        db.query(MissionEvent).delete()
+        db.query(Robot).delete()
+        db.query(Mission).delete()
         db.commit()
+        print("  ✓ Cleared previous dynamic records (users preserved)")
 
-        # ─── Demo Robots ─────────────────────────────────────
-        print("\n[4/6] Creating demo robots...")
-        robot_data = [
-            {
-                "robot_id": "GRD-01", "name": "Pathfinder Alpha",
-                "status": RobotStatus.ACTIVE, "battery": 78.0,
-                "connection_status": ConnectionStatus.CONNECTED,
-                "x": 12.4, "y": 3.2, "z": 0.0,
-                "current_task": "Autonomous patrol — Floor B2 corridor sweep",
-            },
-            {
-                "robot_id": "GRD-02", "name": "Pathfinder Beta",
-                "status": RobotStatus.ACTIVE, "battery": 64.0,
-                "connection_status": ConnectionStatus.CONNECTED,
-                "x": -5.1, "y": 8.7, "z": -3.0,
-                "current_task": "Thermal imaging scan — Floor B3 east wing",
-            },
-            {
-                "robot_id": "UAV-01", "name": "Overwatch Hawk",
-                "status": RobotStatus.ACTIVE, "battery": 42.0,
-                "connection_status": ConnectionStatus.WEAK,
-                "x": 0.0, "y": 0.0, "z": 15.0,
-                "current_task": "Aerial reconnaissance — Structural damage assessment",
-            },
+        # ─── 3. Two Simplified Demo Missions ─────────────────
+        print("\n[4/6] Creating 2 simplified demo missions...")
+        now = datetime.now(timezone.utc)
+
+        # Mission A: Basic Exploration (ACTIVE, 20 m², 00:05:00)
+        mission_a = Mission(
+            name="Basic Exploration",
+            description="Systematic sector exploration and perimeter assessment.",
+            status=MissionStatus.ACTIVE,
+            started_at=now - timedelta(minutes=5),
+            duration=300.0,
+            explored_area=20.0,
+            created_by=commander_user.id,
+        )
+        db.add(mission_a)
+
+        # Mission B: Victim Detection Test (PLANNED, 0 m², 00:00:00)
+        mission_b = Mission(
+            name="Victim Detection Test",
+            description="Scan assigned sector and review victim detection.",
+            status=MissionStatus.PLANNED,
+            started_at=None,
+            duration=0.0,
+            explored_area=0.0,
+            created_by=commander_user.id,
+        )
+        db.add(mission_b)
+        db.flush()
+        print(f"  ✓ Created Mission A: {mission_a.name} (ACTIVE, 20 m²)")
+        print(f"  ✓ Created Mission B: {mission_b.name} (PLANNED, 0 m²)")
+
+        # ─── 4. Three Simplified Demo Robots ─────────────────
+        print("\n[5/6] Creating 3 simplified demo robots...")
+        # Robot Alpha: ACTIVE, 80%, (2, 3), 20 m², CONNECTED
+        robot_alpha = Robot(
+            robot_id="ROBOT-ALPHA",
+            name="Robot Alpha",
+            status=RobotStatus.ACTIVE,
+            battery=80.0,
+            connection_status=ConnectionStatus.CONNECTED,
+            x=2.0,
+            y=3.0,
+            z=0.0,
+            current_task="Basic exploration",
+            mission_id=mission_a.id,
+            last_seen=now,
+        )
+        db.add(robot_alpha)
+
+        # Robot Bravo: IDLE, 65%, (5, 4), 10 m², CONNECTED
+        robot_bravo = Robot(
+            robot_id="ROBOT-BRAVO",
+            name="Robot Bravo",
+            status=RobotStatus.IDLE,
+            battery=65.0,
+            connection_status=ConnectionStatus.CONNECTED,
+            x=5.0,
+            y=4.0,
+            z=0.0,
+            current_task="Waiting for assignment",
+            mission_id=mission_a.id,
+            last_seen=now,
+        )
+        db.add(robot_bravo)
+
+        # Robot Charlie: OFFLINE, 45%, (0, 0), 0 m², DISCONNECTED
+        robot_charlie = Robot(
+            robot_id="ROBOT-CHARLIE",
+            name="Robot Charlie",
+            status=RobotStatus.OFFLINE,
+            battery=45.0,
+            connection_status=ConnectionStatus.DISCONNECTED,
+            x=0.0,
+            y=0.0,
+            z=0.0,
+            current_task="None",
+            mission_id=None,
+            last_seen=now - timedelta(hours=4),
+        )
+        db.add(robot_charlie)
+        db.flush()
+        print("  ✓ Created Robot Alpha   (ACTIVE, 80% batt, pos: 2, 3, online: CONNECTED)")
+        print("  ✓ Created Robot Bravo   (IDLE, 65% batt, pos: 5, 4, online: CONNECTED)")
+        print("  ✓ Created Robot Charlie (OFFLINE, 45% batt, pos: 0, 0, offline: DISCONNECTED)")
+
+        # ─── 5. Two Sample Detections & One Alert ─────────────
+        print("\n[6/6] Creating 2 sample detections and 1 alert...")
+        # Victim: 92% confidence, PENDING at (2, 3)
+        victim_det = Detection(
+            mission_id=mission_a.id,
+            robot_id=robot_alpha.id,
+            detection_type=DetectionType.PERSON,
+            confidence=0.92,
+            status=DetectionStatus.PENDING,
+            x=2.0,
+            y=3.0,
+            z=0.0,
+            timestamp=now - timedelta(minutes=4),
+            image_path="https://images.unsplash.com/photo-1541888946425-d0fbb186c5f8?auto=format&fit=crop&w=600&q=80",
+        )
+        db.add(victim_det)
+
+        # Fire: 88% confidence, PENDING at (5, 4)
+        fire_det = Detection(
+            mission_id=mission_a.id,
+            robot_id=robot_bravo.id,
+            detection_type=DetectionType.FIRE,
+            confidence=0.88,
+            status=DetectionStatus.PENDING,
+            x=5.0,
+            y=4.0,
+            z=0.0,
+            timestamp=now - timedelta(minutes=2),
+            image_path="https://images.unsplash.com/photo-1525874684015-58379d421a52?auto=format&fit=crop&w=600&q=80",
+        )
+        db.add(fire_det)
+
+        # Alert: Fire detected, HIGH severity, ACTIVE
+        fire_alert = Alert(
+            mission_id=mission_a.id,
+            robot_id=robot_bravo.id,
+            title="Fire detected",
+            message="Fire detected in exploration zone",
+            severity=AlertSeverity.HIGH,
+            status=AlertStatus.ACTIVE,
+            created_at=now - timedelta(minutes=2),
+        )
+        db.add(fire_alert)
+
+        # Mission Events
+        events = [
+            MissionEvent(
+                mission_id=mission_a.id,
+                event_type="MISSION_CREATED",
+                message="Mission 'Basic Exploration' created",
+                timestamp=now - timedelta(minutes=6),
+            ),
+            MissionEvent(
+                mission_id=mission_a.id,
+                event_type="MISSION_STARTED",
+                message="Mission started — deploying units",
+                timestamp=now - timedelta(minutes=5),
+            ),
+            MissionEvent(
+                mission_id=mission_a.id,
+                robot_id=robot_alpha.id,
+                event_type="ROBOT_DEPLOYED",
+                message="Robot Alpha deployed to exploration zone",
+                timestamp=now - timedelta(minutes=5),
+            ),
+            MissionEvent(
+                mission_id=mission_a.id,
+                robot_id=robot_bravo.id,
+                event_type="ROBOT_DEPLOYED",
+                message="Robot Bravo on standby for tasking",
+                timestamp=now - timedelta(minutes=5),
+            ),
         ]
+        for ev in events:
+            db.add(ev)
 
-        robots = []
-        for rd in robot_data:
-            existing = db.query(Robot).filter(Robot.robot_id == rd["robot_id"]).first()
-            if existing:
-                print(f"  → Robot '{rd['robot_id']}' already exists, skipping")
-                robots.append(existing)
-            else:
-                robot = Robot(
-                    **rd,
-                    mission_id=mission.id,
-                    last_seen=datetime.now(timezone.utc) - timedelta(seconds=30),
-                )
-                db.add(robot)
-                db.flush()
-                robots.append(robot)
-                print(f"  ✓ Created robot: {rd['robot_id']} — {rd['name']}")
         db.commit()
-
-        # ─── Demo Detections ─────────────────────────────────
-        print("\n[5/6] Creating demo detections...")
-        detection_data = [
-            {"detection_type": DetectionType.PERSON, "confidence": 0.94, "x": 11.2, "y": 2.8, "z": 0.0,
-             "status": DetectionStatus.CONFIRMED, "robot_idx": 0},
-            {"detection_type": DetectionType.PERSON, "confidence": 0.87, "x": -4.5, "y": 9.1, "z": -3.0,
-             "status": DetectionStatus.PENDING, "robot_idx": 1},
-            {"detection_type": DetectionType.FIRE, "confidence": 0.91, "x": 8.3, "y": 5.5, "z": 0.0,
-             "status": DetectionStatus.CONFIRMED, "robot_idx": 0},
-            {"detection_type": DetectionType.GAS_CYLINDER, "confidence": 0.78, "x": -2.0, "y": 7.3, "z": -3.0,
-             "status": DetectionStatus.PENDING, "robot_idx": 1},
-            {"detection_type": DetectionType.DEBRIS, "confidence": 0.96, "x": 15.0, "y": 1.0, "z": 0.0,
-             "status": DetectionStatus.CONFIRMED, "robot_idx": 0},
-            {"detection_type": DetectionType.HELMET, "confidence": 0.72, "x": -6.0, "y": 10.0, "z": -3.0,
-             "status": DetectionStatus.PENDING, "robot_idx": 1},
-            {"detection_type": DetectionType.PERSON, "confidence": 0.65, "x": 3.0, "y": 4.0, "z": 0.0,
-             "status": DetectionStatus.DISMISSED, "robot_idx": 2},
-            {"detection_type": DetectionType.BACKPACK, "confidence": 0.83, "x": 10.0, "y": 2.0, "z": 0.0,
-             "status": DetectionStatus.PENDING, "robot_idx": 0},
-        ]
-
-        det_count = db.query(Detection).filter(Detection.mission_id == mission.id).count()
-        if det_count > 0:
-            print(f"  → {det_count} detections already exist for this mission, skipping")
-        else:
-            for i, dd in enumerate(detection_data):
-                robot_idx = dd.pop("robot_idx")
-                detection = Detection(
-                    mission_id=mission.id,
-                    robot_id=robots[robot_idx].id,
-                    timestamp=datetime.now(timezone.utc) - timedelta(minutes=60 - i * 8),
-                    **dd,
-                )
-                db.add(detection)
-            db.commit()
-            print(f"  ✓ Created {len(detection_data)} detections")
-
-        # ─── Demo Alerts ──────────────────────────────────────
-        print("\n[6/6] Creating demo alerts...")
-        alert_data = [
-            {"severity": AlertSeverity.CRITICAL, "title": "Victim Detected — Floor B2",
-             "message": "High-confidence person detection near collapsed pillar. Immediate rescue team dispatch recommended.",
-             "status": AlertStatus.ACTIVE, "robot_idx": 0},
-            {"severity": AlertSeverity.HIGH, "title": "Active Fire — Floor B2 East",
-             "message": "Thermal anomaly confirmed as active combustion. HAZMAT team notification required.",
-             "status": AlertStatus.ACTIVE, "robot_idx": 0},
-            {"severity": AlertSeverity.MEDIUM, "title": "UAV-01 Battery Low",
-             "message": "Aerial unit battery at 42%. Return-to-base recommended within 15 minutes.",
-             "status": AlertStatus.ACKNOWLEDGED, "robot_idx": 2},
-            {"severity": AlertSeverity.HIGH, "title": "Gas Cylinder Detected — Floor B3",
-             "message": "Pressurized gas cylinder identified in debris field. Explosion risk assessment pending.",
-             "status": AlertStatus.ACTIVE, "robot_idx": 1},
-            {"severity": AlertSeverity.LOW, "title": "Communication Signal Weak — UAV-01",
-             "message": "Signal strength below threshold. Possible structural interference.",
-             "status": AlertStatus.ACTIVE, "robot_idx": 2},
-        ]
-
-        alert_count = db.query(Alert).filter(Alert.mission_id == mission.id).count()
-        if alert_count > 0:
-            print(f"  → {alert_count} alerts already exist for this mission, skipping")
-        else:
-            for i, ad in enumerate(alert_data):
-                robot_idx = ad.pop("robot_idx")
-                alert = Alert(
-                    mission_id=mission.id,
-                    robot_id=robots[robot_idx].id,
-                    created_at=datetime.now(timezone.utc) - timedelta(minutes=50 - i * 10),
-                    **ad,
-                )
-                db.add(alert)
-            db.commit()
-            print(f"  ✓ Created {len(alert_data)} alerts")
-
-        # ─── Mission Events ──────────────────────────────────
-        event_count = db.query(MissionEvent).filter(MissionEvent.mission_id == mission.id).count()
-        if event_count == 0:
-            events = [
-                MissionEvent(mission_id=mission.id, event_type="MISSION_CREATED",
-                             message="Mission 'Operation Phoenix Rising' created",
-                             timestamp=datetime.now(timezone.utc) - timedelta(hours=3)),
-                MissionEvent(mission_id=mission.id, event_type="MISSION_STARTED",
-                             message="Mission started — deploying units",
-                             timestamp=datetime.now(timezone.utc) - timedelta(hours=2, minutes=34)),
-                MissionEvent(mission_id=mission.id, robot_id=robots[0].id, event_type="ROBOT_DEPLOYED",
-                             message="GRD-01 deployed to Floor B2",
-                             timestamp=datetime.now(timezone.utc) - timedelta(hours=2, minutes=30)),
-                MissionEvent(mission_id=mission.id, robot_id=robots[1].id, event_type="ROBOT_DEPLOYED",
-                             message="GRD-02 deployed to Floor B3",
-                             timestamp=datetime.now(timezone.utc) - timedelta(hours=2, minutes=28)),
-                MissionEvent(mission_id=mission.id, robot_id=robots[2].id, event_type="ROBOT_DEPLOYED",
-                             message="UAV-01 deployed for aerial recon",
-                             timestamp=datetime.now(timezone.utc) - timedelta(hours=2, minutes=25)),
-            ]
-            for e in events:
-                db.add(e)
-            db.commit()
+        print("  ✓ Created Victim Detection (92% confidence, PENDING)")
+        print("  ✓ Created Fire Detection   (88% confidence, PENDING)")
+        print("  ✓ Created Fire Alert       (HIGH severity, Unacknowledged/ACTIVE)")
 
         print("\n" + "=" * 60)
-        print("  ✓ Seed data complete!")
-        print()
-        print("  Demo Credentials:")
-        print("    admin@rescuehive.dev     / admin123       (ADMIN)")
-        print("    commander@rescuehive.dev / commander123   (INCIDENT_COMMANDER)")
-        print("    operator@rescuehive.dev  / operator123    (FIELD_OPERATOR)")
+        print("  ✓ Simplified seed data successfully committed to PostgreSQL!")
+        print("  Demo Users:")
+        print("    admin@rescuehive.dev     / admin123     (ADMIN)")
+        print("    commander@rescuehive.dev / commander123 (INCIDENT_COMMANDER)")
+        print("    operator@rescuehive.dev  / operator123  (FIELD_OPERATOR)")
         print("=" * 60)
 
     except Exception as exc:

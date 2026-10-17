@@ -1,44 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Settings, 
-  Sun, 
-  Moon, 
   Palette, 
   User, 
   Bell, 
-  Monitor, 
   Radio, 
   Save, 
   Check, 
-  Sparkles, 
-  ShieldCheck 
+  Moon, 
+  Sun,
+  ShieldCheck,
+  Server
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { Button } from '../components/ui/Button';
 
 export function SettingsPage() {
-  const { theme, setTheme, accentColor, setAccentColor } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Form mock states
+  // Form states initialized with live authenticated user
   const [profile, setProfile] = useState({
-    name: 'Cmdr. Sarah Vance',
+    name: user?.name || 'Authorized Operator',
+    email: user?.email || 'operator@rescuehive.dev',
+    role: user?.role || 'FIELD_OPERATOR',
     callsign: 'Overwatch-Lead',
-    role: 'Incident Commander',
-    email: 'vance.s@rescuehive.io',
-    organization: 'National Disaster Robotics Division',
+    organization: 'National Disaster Robotics Swarm Taskforce',
   });
 
+  useEffect(() => {
+    if (user) {
+      setProfile((prev) => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+        role: user.role || prev.role,
+      }));
+    }
+  }, [user]);
+
   const [preferences, setPreferences] = useState({
-    refreshRate: '10',
+    refreshRate: '8',
     units: 'metric',
     soundAlerts: true,
-    autoCenterMap: true,
     showTrails: true,
-    compactTables: false,
-    simLatency: '25',
   });
 
   const handleSave = (e) => {
@@ -70,7 +78,7 @@ export function SettingsPage() {
       />
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* 1. Theme & Appearance (Requested Dark and Light Mode Switch) */}
+        {/* 1. Theme & Appearance Mode Switch */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
             <Palette className="w-4 h-4 text-cyan-500" />
@@ -147,19 +155,19 @@ export function SettingsPage() {
           </div>
         </div>
 
-        {/* 2. Operator Profile Settings */}
+        {/* 2. Operator Profile Settings (FastAPI Authenticated) */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
             <User className="w-4 h-4 text-cyan-500" />
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-              Incident Commander Profile
+              Operator Terminal Profile (GET /auth/me)
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
             <div>
               <label className="text-slate-500 dark:text-slate-400 block mb-1">
-                Full Name:
+                Full Operator Name:
               </label>
               <input
                 type="text"
@@ -171,26 +179,24 @@ export function SettingsPage() {
 
             <div>
               <label className="text-slate-500 dark:text-slate-400 block mb-1">
-                Tactical Call Sign:
+                Command Station Email:
               </label>
               <input
-                type="text"
-                value={profile.callsign}
-                onChange={(e) => setProfile({ ...profile, callsign: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                type="email"
+                value={profile.email}
+                disabled
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 cursor-not-allowed"
               />
             </div>
 
             <div>
               <label className="text-slate-500 dark:text-slate-400 block mb-1">
-                Role Assignment:
+                Assigned Operational Role:
               </label>
-              <input
-                type="text"
-                value={profile.role}
-                onChange={(e) => setProfile({ ...profile, role: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
-              />
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-cyan-400 font-bold">
+                <ShieldCheck className="w-4 h-4 text-cyan-500" />
+                <span>{profile.role}</span>
+              </div>
             </div>
 
             <div>
@@ -219,16 +225,16 @@ export function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
             <div>
               <label className="text-slate-500 dark:text-slate-400 block mb-1">
-                Simulation Telemetry Loop Rate:
+                REST Polling Refresh Rate:
               </label>
               <select
                 value={preferences.refreshRate}
                 onChange={(e) => setPreferences({ ...preferences, refreshRate: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
               >
-                <option value="10">10 Hz (Real-time telemetry stream)</option>
-                <option value="5">5 Hz (Balanced bandwidth)</option>
-                <option value="1">1 Hz (Battery saving simulation)</option>
+                <option value="5">5 Seconds (High Bandwidth)</option>
+                <option value="8">8 Seconds (Default Balanced)</option>
+                <option value="15">15 Seconds (Low Bandwidth)</option>
               </select>
             </div>
 
@@ -246,49 +252,34 @@ export function SettingsPage() {
               </select>
             </div>
           </div>
-
-          {/* Toggle Switches */}
-          <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-            <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-slate-700 dark:text-slate-300 font-medium">
-                Audible Alert Chimes on Critical Victim & Fire Detection
-              </span>
-              <input
-                type="checkbox"
-                checked={preferences.soundAlerts}
-                onChange={(e) => setPreferences({ ...preferences, soundAlerts: e.target.checked })}
-                className="w-4 h-4 accent-cyan-500"
-              />
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-slate-700 dark:text-slate-300 font-medium">
-                Show Historical Robot Odometry Trails on Tactical GIS Grid
-              </span>
-              <input
-                type="checkbox"
-                checked={preferences.showTrails}
-                onChange={(e) => setPreferences({ ...preferences, showTrails: e.target.checked })}
-                className="w-4 h-4 accent-cyan-500"
-              />
-            </label>
-          </div>
         </div>
 
-        {/* 4. Connection & Simulator Settings */}
+        {/* 4. Backend Environment Info */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-            <Radio className="w-4 h-4 text-cyan-500" />
+            <Server className="w-4 h-4 text-cyan-500" />
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-              Simulator Interface & Connection Mode
+              Backend Architecture (Phase 3 Integration)
             </h3>
           </div>
 
-          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-mono text-amber-800 dark:text-amber-300">
-            <p className="font-bold">Notice: Webots Simulator is an External System</p>
-            <p className="mt-1 font-sans text-amber-700 dark:text-amber-400">
-              In Phase 1, all telemetry is rendered from local mock datasets. Connection to live WebSocket streams from the external Webots simulation engine will occur in Phase 4.
-            </p>
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-mono text-xs space-y-2">
+            <div className="flex justify-between">
+              <span className="text-slate-400">REST API Target:</span>
+              <span className="text-cyan-400 font-bold">{import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Database Engine:</span>
+              <span className="text-emerald-400 font-bold">PostgreSQL via SQLAlchemy ORM</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Authentication Protocol:</span>
+              <span className="text-purple-400 font-bold">JWT Bearer (HS256)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Webots Simulator:</span>
+              <span className="text-amber-400 font-bold">Decoupled (Reserved for Phase 4)</span>
+            </div>
           </div>
         </div>
       </form>

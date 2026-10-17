@@ -1,12 +1,21 @@
 import React from 'react';
-import { AlertCircle, AlertTriangle, Info, Check, ShieldAlert } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Check, ShieldAlert, Loader2 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '../ui/Button';
 
-export function AlertCard({ alert, onAcknowledge }) {
-  const { id, severity, title, description, timestamp, robotName, sector, acknowledged } = alert;
+export function AlertCard({ alert, onAcknowledge, isLoading = false }) {
+  const { id, severity, title, message, description, timestamp, robotName, sector, status, acknowledged } = alert;
+
+  const isAck = acknowledged || status === 'ACKNOWLEDGED';
+  const desc = description || message || 'No event description provided';
 
   const severityConfig = {
+    CRITICAL: {
+      border: 'border-rose-600/40 dark:border-rose-600/50',
+      bg: 'bg-rose-50/60 dark:bg-rose-950/30',
+      iconBg: 'bg-rose-600/15 text-rose-600 dark:text-rose-400',
+      Icon: ShieldAlert,
+    },
     HIGH: {
       border: 'border-rose-500/30 dark:border-rose-500/40',
       bg: 'bg-rose-50/40 dark:bg-rose-950/20',
@@ -33,7 +42,7 @@ export function AlertCard({ alert, onAcknowledge }) {
   return (
     <div
       className={`rounded-xl border p-4 transition-all duration-200 ${style.border} ${style.bg} ${
-        acknowledged ? 'opacity-60 saturate-50' : 'shadow-sm dark:shadow-lg'
+        isAck ? 'opacity-60 saturate-50' : 'shadow-sm dark:shadow-lg'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -48,27 +57,32 @@ export function AlertCard({ alert, onAcknowledge }) {
                 {title}
               </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {description}
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+              {desc}
             </p>
             <div className="flex items-center gap-3 text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-1">
-              <span>Origin: {robotName}</span>
+              <span>Origin: {robotName || 'Fleet Stream'}</span>
               <span>•</span>
-              <span>{sector}</span>
+              <span>{sector || 'Sector Core'}</span>
               <span>•</span>
               <span>{timestamp}</span>
             </div>
           </div>
         </div>
 
-        {!acknowledged && onAcknowledge && (
+        {!isAck && onAcknowledge && (
           <Button
             variant="outline"
             size="sm"
+            disabled={isLoading}
             onClick={() => onAcknowledge(id)}
             className="shrink-0 text-[11px] font-mono gap-1"
           >
-            <Check className="w-3 h-3" />
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Check className="w-3 h-3" />
+            )}
             Ack
           </Button>
         )}

@@ -2,35 +2,51 @@ import React from 'react';
 import { 
   FileText, 
   AlertTriangle, 
-  Download, 
   Printer, 
-  Sparkles, 
   CheckCircle2, 
   MapPin, 
   Clock, 
-  Compass, 
   UserCheck, 
   Flame, 
   ShieldCheck 
 } from 'lucide-react';
 import { useMission } from '../context/MissionContext';
 import { PageHeader } from '../components/common/PageHeader';
+import { LoadingState } from '../components/common/LoadingState';
 import { Button } from '../components/ui/Button';
 
 export function ReportsPage() {
-  const { activeMission, robots, detections } = useMission();
+  const { activeMission, robots, detections, loading } = useMission();
 
-  const victimsCount = detections.filter((d) => d.type === 'Victim' && d.status !== 'DISMISSED').length;
-  const hazardsCount = detections.filter((d) => d.type !== 'Victim' && d.type !== 'Emergency Exit' && d.status !== 'DISMISSED').length;
+  const victimsCount = detections.filter(
+    (d) => (d.type === 'Victim' || d.detection_type === 'PERSON') && d.status !== 'DISMISSED'
+  ).length;
+
+  const hazardsCount = detections.filter(
+    (d) =>
+      d.type !== 'Victim' &&
+      d.detection_type !== 'PERSON' &&
+      d.type !== 'Emergency Exit' &&
+      d.detection_type !== 'EMERGENCY_EXIT' &&
+      d.status !== 'DISMISSED'
+  ).length;
+
+  if (loading.missions && !activeMission) {
+    return (
+      <div className="max-w-5xl mx-auto py-12">
+        <LoadingState message="Generating AI Mission Intelligence Synthesis..." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <PageHeader
         title="AI Mission Intelligence Report"
-        subtitle="Post-sortie telemetry analysis, victim triage priority, and ingress pathfinding"
+        subtitle="Post-sortie telemetry analysis, victim triage priority, and ingress pathfinding (FastAPI)"
         badge={
           <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-mono text-xs border border-cyan-500/30 font-semibold">
-            PREVIEW DRAFT
+            {activeMission?.status || 'ACTIVE'} DEPLOYMENT
           </span>
         }
         action={
@@ -71,10 +87,10 @@ export function ReportsPage() {
               RESCUEHIVE AUTONOMOUS SYNTHESIS
             </div>
             <h2 className="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1">
-              {activeMission?.name || 'Operation Cerberus'}
+              {activeMission?.name || 'Tactical Sortie Assessment'}
             </h2>
             <p className="text-xs text-slate-500 mt-1 font-mono">
-              Mission Code: {activeMission?.code} • Commander: {activeMission?.leadCommander}
+              Mission Code: {activeMission?.code || 'MSN-CURRENT'} • Status: {activeMission?.status || 'PLANNED'}
             </p>
           </div>
 
@@ -93,14 +109,14 @@ export function ReportsPage() {
             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase block">Explored Area</span>
               <span className="text-lg font-bold text-slate-900 dark:text-white mt-1 block">
-                {activeMission?.exploredAreaPercent}% ({activeMission?.exploredAreaSqM?.toLocaleString()} m²)
+                {activeMission?.exploredAreaSqM?.toLocaleString() || 0} m²
               </span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase block">Mission Duration</span>
               <span className="text-lg font-bold text-slate-900 dark:text-white mt-1 block">
-                {activeMission?.duration}
+                {activeMission?.duration || '00:00:00'}
               </span>
             </div>
 
@@ -126,7 +142,7 @@ export function ReportsPage() {
             <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               2. Recommended Rescue & Extraction Triage Order
             </h3>
-            <span className="text-[11px] font-mono text-amber-500">
+            <span className="text-[11px] font-mono text-amber-500 font-semibold">
               AI Priority Ranking
             </span>
           </div>
@@ -138,14 +154,14 @@ export function ReportsPage() {
                   PRIORITY 1 (CRITICAL)
                 </span>
                 <span className="font-mono text-xs text-rose-500 font-semibold">
-                  DET-1001 • Sector 4B (Collapsed Stairwell)
+                  Sector 4B (Structural Cavity)
                 </span>
               </div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
                 Survivor in Basement Cavity beneath pre-stressed slab
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Thermal respirations confirmed by Robot Alpha. Structural movement risk high due to localized fire 12m away in Basement Electrical Hub. Immediate hydraulic shoring extraction recommended.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                Thermal respirations confirmed by autonomous fleet. Immediate hydraulic shoring extraction recommended.
               </p>
             </div>
 
@@ -155,14 +171,14 @@ export function ReportsPage() {
                   PRIORITY 2 (HIGH)
                 </span>
                 <span className="font-mono text-xs text-amber-500 font-semibold">
-                  DET-1005 • Sector 4C (Office 102)
+                  Sector 4C (Office Corridor)
                 </span>
               </div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
                 Trapped Survivor behind Drywall Partition
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Acoustic triangulations by Robot Charlie confirm conscious survivor. Low atmospheric hazard. Recommend manual breach via Corridor West once heavy beam debris is stabilized.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                Low atmospheric hazard. Recommend manual breach via Corridor West once heavy beam debris is stabilized.
               </p>
             </div>
           </div>
@@ -174,7 +190,7 @@ export function ReportsPage() {
             <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               3. Recommended Safe Ingress / Egress Route
             </h3>
-            <span className="text-[11px] font-mono text-emerald-500">
+            <span className="text-[11px] font-mono text-emerald-500 font-semibold">
               Hazard-Avoidance Optimization
             </span>
           </div>
@@ -185,22 +201,22 @@ export function ReportsPage() {
               <span>OPTIMAL VECTOR: REAR EMERGENCY ACCESS (WAYPOINT GREEN-ALPHA)</span>
             </div>
 
-            <ol className="list-decimal list-inside space-y-1.5 text-slate-700 dark:text-slate-300 pl-1">
-              <li>Enter through Rear Emergency Exit Door (DET-1006, Sector 4A rear perimeter) — Confirmed unobstructed.</li>
-              <li>Traverse West Service Gallery avoiding Sector 4B Electrical Hub due to 480°C open flame (DET-1002).</li>
-              <li>Maintain 15-meter safety radius from LPG Gas Cylinder hazard (DET-1003) at coordinates (71.5, 52.0).</li>
+            <ol className="list-decimal list-inside space-y-1.5 text-slate-700 dark:text-slate-300 pl-1 font-sans">
+              <li>Enter through Rear Emergency Exit Door — Confirmed unobstructed by robotic sensors.</li>
+              <li>Traverse West Service Gallery avoiding localized flame thermal signatures in Basement Hub.</li>
+              <li>Maintain 15-meter safety radius from identified pressurized cylinders.</li>
               <li>Establish secondary casualty collection point at Staging Zone Bravo.</li>
             </ol>
           </div>
         </div>
 
-        {/* Commander Signature Sign-off */}
+        {/* Commander Sign-off */}
         <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs text-slate-500">
           <div>
             <span>Status: Awaiting Incident Commander Final Approval</span>
           </div>
           <div className="border-b border-dashed border-slate-400 w-48 text-right pb-1">
-            Sign: Cmdr. S. Vance
+            Sign: Incident Commander
           </div>
         </div>
       </div>

@@ -2,19 +2,19 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ─── Auth Schemas ─────────────────────────────────────────────────────
 class UserRegister(BaseModel):
     name: str = Field(..., min_length=2, max_length=255)
-    email: EmailStr
+    email: str = Field(..., min_length=3, max_length=255)
     password: str = Field(..., min_length=6, max_length=128)
     role: str = Field(default="FIELD_OPERATOR")
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str = Field(..., min_length=3, max_length=255)
     password: str
 
 

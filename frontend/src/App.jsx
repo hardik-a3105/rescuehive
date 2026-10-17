@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 import { MissionProvider } from './context/MissionContext';
 import { AppShell } from './layouts/AppShell';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Application Pages
 import { LoginPage } from './pages/LoginPage';
@@ -17,26 +19,35 @@ import { NotFoundPage } from './pages/NotFoundPage';
 export default function App() {
   return (
     <ThemeProvider>
-      <MissionProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Login Route */}
-            <Route path="/login" element={<LoginPage />} />
+      <AuthProvider>
+        <MissionProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Login Route */}
+              <Route path="/login" element={<LoginPage />} />
 
-            {/* Authenticated / Command Center Layout Routes */}
-            <Route path="/" element={<AppShell />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="robots" element={<RobotsPage />} />
-              <Route path="detections" element={<DetectionsPage />} />
-              <Route path="missions" element={<MissionsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </MissionProvider>
+              {/* Protected Command Center Routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <AppShell />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="robots" element={<RobotsPage />} />
+                <Route path="detections" element={<DetectionsPage />} />
+                <Route path="missions" element={<MissionsPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </MissionProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

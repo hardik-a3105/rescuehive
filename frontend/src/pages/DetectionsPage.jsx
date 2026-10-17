@@ -3,19 +3,20 @@ import {
   Crosshair, 
   Filter, 
   Search, 
+  RefreshCw, 
   CheckCircle2, 
-  XCircle, 
-  Sparkles, 
-  SlidersHorizontal 
+  AlertCircle 
 } from 'lucide-react';
 import { useMission } from '../context/MissionContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { DetectionTable } from '../components/common/DetectionTable';
 import { EmptyState } from '../components/common/EmptyState';
+import { LoadingState } from '../components/common/LoadingState';
+import { ErrorState } from '../components/common/ErrorState';
 import { Button } from '../components/ui/Button';
 
 export function DetectionsPage() {
-  const { detections, robots, updateDetectionStatus } = useMission();
+  const { detections, robots, loading, errors, updateDetectionStatus, fetchDetections } = useMission();
 
   // Filters state
   const [selectedType, setSelectedType] = useState('ALL');
@@ -24,20 +25,20 @@ export function DetectionsPage() {
   const [minConfidence, setMinConfidence] = useState('0');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const typesList = ['ALL', 'Victim', 'Fire', 'Gas Cylinder', 'Debris', 'Emergency Exit'];
-  const statusesList = ['ALL', 'CONFIRMED', 'PENDING', 'DISMISSED'];
+  const typesList = ['ALL', 'Victim', 'Fire', 'Gas Cylinder', 'Debris', 'Emergency Exit', 'Helmet', 'Backpack'];
+  const statusesList = ['ALL', 'PENDING', 'CONFIRMED', 'DISMISSED'];
 
   const filteredDetections = useMemo(() => {
     return detections.filter((det) => {
-      if (selectedType !== 'ALL' && det.type !== selectedType) return false;
-      if (selectedRobot !== 'ALL' && det.robotId !== selectedRobot) return false;
+      if (selectedType !== 'ALL' && det.type !== selectedType && det.detection_type !== selectedType) return false;
+      if (selectedRobot !== 'ALL' && det.robotId !== selectedRobot && det.robot_id !== selectedRobot) return false;
       if (selectedStatus !== 'ALL' && det.status !== selectedStatus) return false;
-      if (det.confidence < parseFloat(minConfidence)) return false;
+      if ((det.confidence ?? 1) < parseFloat(minConfidence)) return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchSector = det.location.sector.toLowerCase().includes(query);
-        const matchDetails = det.details.toLowerCase().includes(query);
-        const matchId = det.id.toLowerCase().includes(query);
+        const matchSector = det.location?.sector?.toLowerCase().includes(query);
+        const matchDetails = det.details?.toLowerCase().includes(query);
+        const matchId = String(det.id)?.toLowerCase().includes(query);
         if (!matchSector && !matchDetails && !matchId) return false;
       }
       return true;
@@ -45,13 +46,35 @@ export function DetectionsPage() {
   }, [detections, selectedType, selectedRobot, selectedStatus, minConfidence, searchQuery]);
 
   const pendingCount = detections.filter((d) => d.status === 'PENDING').length;
-  const confirmedCount = detections.filter((d) => d.status === 'CONFIRMED').length;
+
+  // Loading state
+  if (loading.detections && detections.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto py-12">
+        <LoadingState message="Retrieving AI detections queue from PostgreSQL..." />
+      </div>
+    );
+  }
+
+  // Error state
+  if (errors.detections && detections.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto py-12">
+        <ErrorState
+          title="Detections Feed Offline"
+          message={errors.detections.message || 'Unable to retrieve detections from FastAPI.'}
+          status={errors.detections.status}
+          onRetry={fetchDetections}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader
         title="AI Detections Queue"
-        subtitle="Human-in-the-loop review of computer vision detections and hazard anomalies"
+        subtitle="Human-in-the-loop review of computer vision detections and hazard anomalies (FastAPI)"
         badge={
           <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-xs border border-amber-500/30 font-semibold">
             {pendingCount} PENDING REVIEW
@@ -59,9 +82,16 @@ export function DetectionsPage() {
         }
         action={
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-500">
-              Total Detections: {detections.length}
-            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchDetections}
+              disabled={loading.detections}
+              className="gap-1.5 font-mono text-xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading.detections ? 'animate-spin' : ''}`} />
+              Sync Detections
+            </Button>
           </div>
         }
       />
@@ -125,7 +155,7 @@ export function DetectionsPage() {
               <option value="ALL">Robot: All Fleet</option>
               {robots.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name} ({r.id})
+                  {r.name} ({r.robot_id || r.id})
                 </option>
               ))}
             </select>
@@ -172,14 +202,22 @@ export function DetectionsPage() {
         <EmptyState
           icon={Crosshair}
           title="No Detections Found"
-          description="No detection entries matched your current filter combinations."
-          actionText="Clear All Filters"
+          description={
+            detections.length === 0
+              ? 'No detections recorded yet in PostgreSQL. Deploy active robots to detect survivors and hazards.'
+              : 'No detection entries matched your current filter combinations.'
+          }
+          actionText={detections.length > 0 ? 'Clear All Filters' : 'Refresh Queue'}
           onAction={() => {
-            setSelectedType('ALL');
-            setSelectedRobot('ALL');
-            setSelectedStatus('ALL');
-            setMinConfidence('0');
-            setSearchQuery('');
+            if (detections.length > 0) {
+              setSelectedType('ALL');
+              setSelectedRobot('ALL');
+              setSelectedStatus('ALL');
+              setMinConfidence('0');
+              setSearchQuery('');
+            } else {
+              fetchDetections();
+            }
           }}
         />
       )}

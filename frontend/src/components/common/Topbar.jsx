@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShieldAlert, 
   Radio, 
@@ -8,19 +9,46 @@ import {
   User, 
   ChevronDown, 
   CheckCircle2, 
-  AlertTriangle 
+  AlertTriangle,
+  LogOut,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useMission } from '../../context/MissionContext';
+import { useAuth } from '../../context/AuthContext';
 import { StatusBadge } from './StatusBadge';
 
 export function Topbar() {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { activeMission, alerts, robots, notifications, removeNotification } = useMission();
-  const [showNotifications, setShowNotifications] = useState(false);
+  const { activeMission, alerts, robots, errors } = useMission();
+  const { user, logout } = useAuth();
 
-  const activeRobotsCount = robots.filter((r) => r.status === 'ACTIVE' || r.status === 'EXPLORING').length;
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const activeRobotsCount = robots.filter(
+    (r) => (r.connection_status === 'CONNECTED' || r.connectionStatus === 'CONNECTED') && r.status !== 'OFFLINE'
+  ).length;
   const unreadAlertsCount = alerts.filter((a) => !a.acknowledged).length;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'OP';
+    return name
+      .split(' ')
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
+  const isConnected = !errors.dashboard && !errors.missions;
 
   return (
     <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between transition-colors">
@@ -36,11 +64,11 @@ export function Topbar() {
                 RESCUEHIVE
               </span>
               <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[10px] font-mono font-bold uppercase border border-cyan-500/30">
-                Phase 1
+                Phase 3 Live
               </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans truncate max-w-xs">
-              {activeMission?.name || 'Disaster Intelligence Command'}
+              {activeMission?.name || 'FastAPI + PostgreSQL Integrated'}
             </p>
           </div>
         </div>
@@ -48,10 +76,6 @@ export function Topbar() {
         {/* Live Mission Status Pills */}
         <div className="hidden lg:flex items-center gap-2 font-mono text-xs pl-4 border-l border-slate-200 dark:border-slate-800">
           <StatusBadge status={activeMission?.status || 'ACTIVE'} />
-
-          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold">
-            SIMULATION MODE
-          </span>
 
           <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px]">
             {activeRobotsCount} / {robots.length} ROBOTS ONLINE
@@ -61,14 +85,28 @@ export function Topbar() {
 
       {/* Right Controls: Connection, Theme Switch, Notifications, Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Connection Indicator */}
+        {/* Backend Connection Indicator */}
         <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-mono">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isConnected ? 'bg-emerald-400' : 'bg-rose-400'
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-2 w-2 ${
+                isConnected ? 'bg-emerald-500' : 'bg-rose-500'
+              }`}
+            />
           </span>
-          <span className="hidden sm:inline text-emerald-600 dark:text-emerald-400 font-medium">
-            SIM TELEMETRY LIVE
+          <span
+            className={`hidden sm:inline font-medium text-[11px] ${
+              isConnected
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-rose-600 dark:text-rose-400'
+            }`}
+          >
+            {isConnected ? 'API CONNECTED' : 'BACKEND OFFLINE'}
           </span>
         </div>
 
@@ -105,7 +143,7 @@ export function Topbar() {
             <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 z-50 font-mono text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800 mb-3">
                 <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
-                  Recent Tactical Events
+                  Recent Tactical Alerts
                 </span>
                 <span className="text-[10px] text-slate-400">
                   {unreadAlertsCount} unacknowledged
@@ -113,42 +151,73 @@ export function Topbar() {
               </div>
 
               <div className="space-y-2 max-h-72 overflow-y-auto">
-                {alerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={`p-2.5 rounded-lg border text-[11px] ${
-                      alert.severity === 'HIGH'
-                        ? 'border-rose-500/30 bg-rose-500/5 text-rose-400'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-300'
-                    }`}
-                  >
-                    <div className="flex justify-between font-bold">
-                      <span className="text-slate-800 dark:text-slate-200">{alert.title}</span>
-                      <span className="text-[10px] text-slate-400">{alert.timestamp}</span>
+                {alerts.length === 0 ? (
+                  <p className="text-slate-400 text-center py-4 text-xs font-sans">
+                    No active emergency alerts recorded.
+                  </p>
+                ) : (
+                  alerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={`p-2.5 rounded-lg border text-[11px] ${
+                        alert.severity === 'HIGH' || alert.severity === 'CRITICAL'
+                          ? 'border-rose-500/30 bg-rose-500/5 text-rose-400'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between font-bold">
+                        <span className="text-slate-800 dark:text-slate-200">{alert.title}</span>
+                        <span className="text-[10px] text-slate-400">{alert.timestamp}</span>
+                      </div>
+                      <p className="text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 font-sans">
+                        {alert.description || alert.message}
+                      </p>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 font-sans">
-                      {alert.description}
-                    </p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* User Profile Capsule */}
-        <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-md">
-            SV
-          </div>
-          <div className="hidden md:block text-left font-mono">
-            <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-              Cmdr. Sarah Vance
+        {/* User Profile Capsule with Dropdown Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 hover:opacity-90 transition-opacity"
+          >
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-md">
+              {getInitials(user?.name)}
             </div>
-            <div className="text-[10px] text-cyan-600 dark:text-cyan-400 leading-tight">
-              Incident Commander
+            <div className="hidden md:block text-left font-mono">
+              <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[140px]">
+                {user?.name || 'Authenticated Operator'}
+              </div>
+              <div className="text-[10px] text-cyan-600 dark:text-cyan-400 leading-tight uppercase font-semibold">
+                {user?.role?.replace('_', ' ') || 'FIELD OPERATOR'}
+              </div>
             </div>
-          </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-2 z-50 font-mono text-xs">
+              <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+                <p className="font-bold text-slate-900 dark:text-white truncate">{user?.name}</p>
+                <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  {user?.role}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 mt-1 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors font-medium text-xs"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out Terminal
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.domain import (
     Mission, MissionStatus,
-    Robot, RobotStatus,
+    Robot, RobotStatus, ConnectionStatus,
     Detection, DetectionType, DetectionStatus,
     Alert, AlertStatus,
 )
@@ -21,9 +21,9 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         .first()
     )
 
-    # Robot counts
+    # Robot counts (online count consistent with connection_status)
     total_robots = db.query(Robot).count()
-    active_robots = db.query(Robot).filter(Robot.status == RobotStatus.ACTIVE).count()
+    active_robots = db.query(Robot).filter(Robot.connection_status == ConnectionStatus.CONNECTED).count()
 
     # Detection counts
     total_detections = db.query(Detection).count()
@@ -66,10 +66,15 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         active_mission_name = active_mission.name
         active_mission_id = str(active_mission.id)
         explored_area = active_mission.explored_area or 0.0
-        if active_mission.started_at:
+        if active_mission.duration is not None and active_mission.duration > 0:
+            mission_duration = active_mission.duration
+        elif active_mission.started_at:
             from datetime import datetime, timezone
             now = datetime.now(timezone.utc)
-            mission_duration = (now - active_mission.started_at).total_seconds()
+            started_at = active_mission.started_at
+            if started_at.tzinfo is None:
+                started_at = started_at.replace(tzinfo=timezone.utc)
+            mission_duration = (now - started_at).total_seconds()
 
     return DashboardSummary(
         active_mission=active_mission_name,

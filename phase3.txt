@@ -1,0 +1,390 @@
+# RescueHive — Phase 3: Frontend and Backend Integration
+
+Continue development of RescueHive.
+
+Phase 0:
+Project foundation completed.
+
+Phase 1:
+Frontend dashboard completed using mock data.
+
+Phase 2:
+FastAPI + PostgreSQL backend completed.
+
+Now connect the frontend to the backend.
+
+---
+
+# IMPORTANT
+
+This phase connects:
+
+React frontend
+↓
+FastAPI REST API
+↓
+PostgreSQL
+
+Do NOT connect Webots yet.
+
+The Webots simulator will be integrated in a later phase.
+
+Do NOT implement AI yet.
+
+---
+
+# FRONTEND API LAYER
+
+Create a clean API service layer.
+
+Example:
+
+frontend/src/services/api/
+
+Create modules:
+
+authApi.js
+missionApi.js
+robotApi.js
+detectionApi.js
+alertApi.js
+dashboardApi.js
+
+Use environment configuration.
+
+Example:
+
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+
+Do not hardcode API URLs throughout components.
+
+---
+
+# AUTHENTICATION
+
+Connect the login page to:
+
+POST /auth/login
+
+Store the JWT securely according to the project's frontend architecture.
+
+Create an authentication context/store.
+
+Support:
+
+- login
+- logout
+- current user
+- token handling
+- protected routes
+
+Connect:
+
+GET /auth/me
+
+---
+
+# PROTECTED ROUTES
+
+Protect:
+
+/dashboard
+/robots
+/detections
+/missions
+/reports
+/settings
+
+The login page should remain public.
+
+If a user is not authenticated, redirect to /login.
+
+---
+
+# DASHBOARD
+
+Replace mock dashboard values with backend data.
+
+Connect:
+
+GET /dashboard/summary
+
+Display:
+
+- active mission
+- active robots
+- explored area
+- victims
+- hazards
+- alerts
+- mission duration
+
+---
+
+# ROBOTS
+
+Replace mock robot list with:
+
+GET /robots
+
+Connect robot details to:
+
+GET /robots/{robot_id}
+
+Robot information should come from FastAPI.
+
+---
+
+# DETECTIONS
+
+Replace mock detections with:
+
+GET /detections
+
+Connect:
+
+Confirm
+
+to:
+
+PATCH /detections/{id}/confirm
+
+Connect:
+
+Dismiss
+
+to:
+
+PATCH /detections/{id}/dismiss
+
+Add loading states.
+
+Add error states.
+
+Add empty states.
+
+---
+
+# ALERTS
+
+Connect:
+
+GET /alerts
+
+Connect acknowledge action:
+
+PATCH /alerts/{id}/acknowledge
+
+Update the UI after the operation succeeds.
+
+---
+
+# MISSIONS
+
+Connect mission list:
+
+GET /missions
+
+Connect mission creation:
+
+POST /missions
+
+Connect mission details:
+
+GET /missions/{mission_id}
+
+Connect controls:
+
+POST /missions/{mission_id}/start
+
+POST /missions/{mission_id}/pause
+
+POST /missions/{mission_id}/resume
+
+POST /missions/{mission_id}/stop
+
+---
+
+# REMOVE MOCK DATA
+
+Once API integration is working:
+
+Stop using mock data as the primary data source.
+
+Keep mock files only if they are useful for isolated UI development/testing.
+
+The actual dashboard must use backend data.
+
+---
+
+# LOADING STATES
+
+Every API-dependent page should handle:
+
+Loading
+Success
+Empty
+Error
+
+Example:
+
+Loading dashboard...
+
+No active mission.
+
+Unable to connect to RescueHive backend.
+
+---
+
+# ERROR HANDLING
+
+Create a common API error handler.
+
+Handle:
+
+401
+403
+404
+422
+500
+network failure
+
+If JWT expires, redirect the user to login.
+
+---
+
+# USER EXPERIENCE
+
+Do not make the interface freeze while waiting for APIs.
+
+Buttons should show loading states.
+
+Example:
+
+Starting mission...
+
+Confirming detection...
+
+Stopping mission...
+
+---
+
+# DATA REFRESH
+
+For this phase, use normal REST polling where necessary.
+
+For example, refresh dashboard data every few seconds.
+
+DO NOT implement WebSockets yet.
+
+WebSocket real-time communication will be implemented in a later phase.
+
+---
+
+# MISSION UI
+
+The mission page should now reflect actual backend state.
+
+For example:
+
+PLANNED
+ACTIVE
+PAUSED
+COMPLETED
+ABORTED
+
+Do not allow invalid actions.
+
+Example:
+
+A completed mission should not display "Start Mission".
+
+---
+
+# ROLE-BASED UI
+
+Use the logged-in user's role.
+
+Roles:
+
+FIELD_OPERATOR
+INCIDENT_COMMANDER
+ADMIN
+
+Hide or disable controls that the current role should not access.
+
+Do not rely only on frontend role checks for security.
+
+Backend authorization remains authoritative.
+
+---
+
+# ENVIRONMENT CONFIGURATION
+
+Create:
+
+.env.example
+
+Example:
+
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+
+Do not commit secrets.
+
+---
+
+# DEVELOPMENT EXPERIENCE
+
+The project should run independently:
+
+Frontend:
+
+npm run dev
+
+Backend:
+
+uvicorn app.main:app --reload
+
+PostgreSQL:
+
+configured through DATABASE_URL
+
+---
+
+# IMPORTANT RULES
+
+DO NOT:
+
+- connect to Webots
+- implement WebSocket
+- implement YOLO
+- implement SAM2
+- implement MiDaS
+- implement LLM
+- implement robot navigation
+- create fake simulator data
+
+The frontend should now use real backend/database data.
+
+---
+
+# SUCCESS CONDITION
+
+At the end of Phase 3:
+
+1. User can register/login.
+2. User can access the dashboard after login.
+3. Dashboard gets data from FastAPI.
+4. Robots come from PostgreSQL.
+5. Detections come from PostgreSQL.
+6. Alerts come from PostgreSQL.
+7. Missions come from PostgreSQL.
+8. Mission control buttons call real APIs.
+9. Detection confirmation/dismissal works.
+10. Role-based UI works.
+11. Loading/error states work.
+12. Mock data is no longer the primary application data source.
+
+The Webots simulator should still be completely separate.
+
+Do not start Phase 4 automatically.

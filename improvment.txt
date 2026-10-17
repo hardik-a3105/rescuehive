@@ -1,0 +1,161 @@
+# RescueHive — Simplify Existing Dashboard Data and Testing
+
+I am sharing screenshots of the CURRENT RescueHive application. Use the existing project and screenshots as the reference.
+
+The UI design is already good. Do not redesign it or rebuild the application.
+
+My problem is that the generated missions and robot data are too complex to test easily. Simplify the existing data and interactions so I can test each feature step by step.
+
+## 1. Preserve the existing interface
+
+Keep the existing:
+- Dark command-center theme
+- Sidebar and top navigation
+- Robot fleet cards
+- Mission operations page
+- Detection queue
+- AI reports page
+- System settings
+- Existing API and database architecture
+
+Do not remove pages or replace the current design with a basic template.
+
+## 2. Simplify robot data
+
+Use only these three demo robots:
+
+Robot Alpha:
+- Status: ACTIVE
+- Battery: 80%
+- Position: (2, 3)
+- Coverage: 20 m²
+- Assignment: Basic exploration
+
+Robot Bravo:
+- Status: IDLE
+- Battery: 65%
+- Position: (5, 4)
+- Coverage: 10 m²
+- Assignment: Waiting for assignment
+
+Robot Charlie:
+- Status: OFFLINE
+- Battery: 45%
+- Position: (0, 0)
+- Coverage: 0 m²
+- Assignment: None
+
+Use simple, deterministic values. Do not generate random telemetry.
+
+Make online counts consistent with robot connection statuses. If a robot is offline, it must not be counted as online.
+
+## 3. Simplify mission data
+
+Create only two demo missions.
+
+Mission A: Basic Exploration
+- Status: ACTIVE
+- Robots assigned: Alpha and Bravo
+- Duration: 00:05:00
+- Surveyed area: 20 m²
+- Completed objectives: 1 of 3
+
+Objectives:
+1. Start exploration — completed
+2. Survey assigned area — pending
+3. Complete mission — pending
+
+Mission B: Victim Detection Test
+- Status: PLANNED
+- Robots assigned: Alpha
+- Surveyed area: 0 m²
+- Completed objectives: 0 of 3
+
+Objectives:
+1. Start mission
+2. Scan assigned area
+3. Review victim detection
+
+Keep mission descriptions short and understandable.
+
+Do not use complicated military-style operation names, long mission IDs, or excessive operational objectives.
+
+## 4. Simplify detections and alerts
+
+Create only two sample detections:
+
+- Victim: 92% confidence, PENDING
+- Fire: 88% confidence, PENDING
+
+Create only one alert:
+
+- Title: Fire detected
+- Severity: HIGH
+- Status: Unacknowledged
+
+Allow me to confirm or dismiss a detection and acknowledge an alert.
+
+Update the UI and persist changes through the existing backend where available.
+
+## 5. Make robot and mission controls testable
+
+Robot controls:
+- Pause
+- Resume
+- Return
+- Retask
+
+Mission controls:
+- Start Mission
+- Pause Mission
+- Resume Mission
+- Stop Mission
+
+Ensure the controls have clear, predictable behavior and update the displayed status only after the corresponding operation succeeds.
+
+Do not claim a command reached a real robot or Webots when no simulator connection exists.
+
+If these are currently local demo controls, clearly label their behavior as demo-only.
+
+## 6. Simplify the testing workflow
+
+I should be able to test the application in this order:
+
+1. View the three robots and their statuses.
+2. Start the planned mission.
+3. Pause and resume the active mission.
+4. Confirm the victim detection.
+5. Dismiss the fire detection.
+6. Acknowledge the fire alert.
+7. Stop the mission.
+8. Refresh the page and verify persisted data.
+
+Do not require a running Webots simulation for these basic tests.
+
+## 7. Keep data consistent
+
+- The number of online robots must match their connection states.
+- Mission status must match the available mission actions.
+- Completed objectives should be visually distinguished from pending objectives.
+- Dashboard victim and hazard counts must match the actual detection records.
+- Do not generate new missions or detections on every page refresh.
+- Prevent duplicate seed data.
+- Do not delete existing user accounts or unrelated production data.
+
+## 8. Final verification
+
+Inspect the existing implementation before changing files.
+
+Reuse existing API endpoints and database models wherever possible.
+
+Make the smallest changes needed to simplify the data and testing workflow.
+
+Run relevant tests and report:
+- Files changed
+- Commands to start the frontend and backend
+- How to load demo data
+- Which controls work with the backend
+- Which controls are demo-only
+- Any remaining errors
+
+Do not implement Webots integration, real robot navigation, or new AI models in this task.

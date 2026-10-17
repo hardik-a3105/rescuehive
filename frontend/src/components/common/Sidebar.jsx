@@ -8,15 +8,18 @@ import {
   FileText, 
   Settings, 
   LogOut, 
-  Activity, 
-  ShieldCheck, 
-  Sparkles 
+  ShieldCheck,
+  Server
 } from 'lucide-react';
 import { useMission } from '../../context/MissionContext';
+import { useAuth } from '../../context/AuthContext';
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { robots, detections } = useMission();
+  const { robots, detections, errors } = useMission();
+  const { user, logout } = useAuth();
+
+  const pendingDetections = detections.filter((d) => d.status === 'PENDING').length;
 
   const navItems = [
     {
@@ -35,7 +38,7 @@ export function Sidebar() {
       to: '/detections',
       label: 'Detections Queue',
       icon: Crosshair,
-      badge: `${detections.filter((d) => d.status === 'PENDING').length} new`,
+      badge: pendingDetections > 0 ? `${pendingDetections} new` : null,
       badgeColor: 'bg-amber-500/20 text-amber-500 border-amber-500/30',
     },
     {
@@ -59,8 +62,11 @@ export function Sidebar() {
   ];
 
   const handleLogout = () => {
+    logout();
     navigate('/login');
   };
+
+  const isBackendHealthy = !errors.dashboard;
 
   return (
     <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#090d18]/70 backdrop-blur-md flex flex-col justify-between shrink-0 transition-colors">
@@ -105,19 +111,26 @@ export function Sidebar() {
           </nav>
         </div>
 
-        {/* Tactical Status Card */}
+        {/* Backend Connectivity Status Card */}
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 font-mono text-[11px] space-y-2">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Simulation Mesh</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+              <Server className="w-3 h-3 text-cyan-400" />
+              FastAPI Core
+            </span>
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isBackendHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+              }`}
+            />
           </div>
           <div className="flex justify-between text-slate-700 dark:text-slate-300">
-            <span>Uplink:</span>
-            <span className="text-emerald-500 font-bold">100% (Sim)</span>
+            <span>Database:</span>
+            <span className="text-emerald-500 font-bold">PostgreSQL</span>
           </div>
           <div className="flex justify-between text-slate-700 dark:text-slate-300">
-            <span>Sync Loop:</span>
-            <span className="text-cyan-500 font-bold">10 Hz</span>
+            <span>REST Polling:</span>
+            <span className="text-cyan-500 font-bold">Active (8s)</span>
           </div>
         </div>
       </div>
@@ -125,26 +138,26 @@ export function Sidebar() {
       {/* Bottom Section: System Status, Logged-in User, Logout */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 space-y-3 font-mono">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-slate-500">RUNTIME:</span>
-          <span className="text-emerald-500 font-semibold flex items-center gap-1">
+          <span className="text-slate-500">ROLE:</span>
+          <span className="text-cyan-500 font-semibold flex items-center gap-1 uppercase">
             <ShieldCheck className="w-3.5 h-3.5" />
-            NORMAL
+            {user?.role?.replace('_', ' ') || 'OPERATOR'}
           </span>
         </div>
 
         <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div className="truncate">
+          <div className="truncate mr-2">
             <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-              Cmdr. Sarah Vance
+              {user?.name || 'Authorized Operator'}
             </div>
             <div className="text-[10px] text-slate-500 truncate">
-              commander@rescuehive.io
+              {user?.email || 'operator@rescuehive.dev'}
             </div>
           </div>
           <button
             onClick={handleLogout}
-            title="Log Out (Return to Login)"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+            title="Log Out Terminal"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0"
           >
             <LogOut className="w-4 h-4" />
           </button>
