@@ -12,14 +12,15 @@ import {
   AlertTriangle,
   LogOut,
   Wifi,
-  WifiOff
+  WifiOff,
+  Menu
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useMission } from '../../context/MissionContext';
 import { useAuth } from '../../context/AuthContext';
 import { StatusBadge } from './StatusBadge';
 
-export function Topbar() {
+export function Topbar({ onToggleSidebar }) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { activeMission, alerts, robots, errors } = useMission();
@@ -51,12 +52,21 @@ export function Topbar() {
   const isConnected = !errors.dashboard && !errors.missions;
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between transition-colors">
-      {/* Left: Branding & Current Mission Status */}
-      <div className="flex items-center gap-4 sm:gap-6">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-[#070b14]/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors">
+      {/* Left: Branding, Mobile Toggle & Current Mission Status */}
+      <div className="flex items-center gap-3 sm:gap-6">
+        {/* Mobile Hamburger Menu Toggle */}
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden transition-colors"
+          title="Toggle Navigation Sidebar"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/30">
-            <ShieldAlert className="w-6 h-6 text-slate-950 stroke-[2.2]" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/30 shrink-0">
+            <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 stroke-[2.2]" />
           </div>
           <div className="hidden sm:block">
             <div className="flex items-center gap-2">

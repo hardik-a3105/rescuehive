@@ -4,9 +4,15 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
+    try {
+      const workstation = localStorage.getItem('rescuehive_workstation_settings');
+      if (workstation) {
+        const parsed = JSON.parse(workstation);
+        if (parsed.theme) return parsed.theme;
+      }
+    } catch {}
     const saved = localStorage.getItem('rescuehive_theme');
     if (saved === 'light' || saved === 'dark') return saved;
-    // Default to dark mode for high-tech command center feel
     return 'dark';
   });
 
@@ -24,6 +30,11 @@ export function ThemeProvider({ children }) {
       root.classList.remove('dark');
     }
     localStorage.setItem('rescuehive_theme', theme);
+    try {
+      const workstation = localStorage.getItem('rescuehive_workstation_settings');
+      const parsed = workstation ? JSON.parse(workstation) : {};
+      localStorage.setItem('rescuehive_workstation_settings', JSON.stringify({ ...parsed, theme }));
+    } catch {}
   }, [theme]);
 
   useEffect(() => {

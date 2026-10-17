@@ -76,12 +76,19 @@ def create_detection(db: Session, **kwargs) -> Detection:
         mission_id=kwargs.get("mission_id"),
         robot_id=kwargs.get("robot_id"),
         detection_type=det_type,
-        confidence=kwargs["confidence"],
+        confidence=kwargs.get("confidence", 0.0),
         x=kwargs.get("x"),
         y=kwargs.get("y"),
         z=kwargs.get("z"),
         image_path=kwargs.get("image_path"),
         status=DetectionStatus.PENDING,
+        description=kwargs.get("description"),
+        evidence=kwargs.get("evidence"),
+        location_description=kwargs.get("location_description"),
+        analysis_source=kwargs.get("analysis_source", "ROBOT_TELEMETRY"),
+        model_name=kwargs.get("model_name"),
+        review_priority=kwargs.get("review_priority"),
+        user_id=kwargs.get("user_id"),
     )
     db.add(detection)
     db.commit()

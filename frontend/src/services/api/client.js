@@ -38,8 +38,9 @@ async function request(method, path, { body, params, requireAuth = true } = {}) 
   }
 
   const headers = { 'Accept': 'application/json' };
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
-  if (body !== undefined) {
+  if (body !== undefined && !isFormData) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -55,7 +56,7 @@ async function request(method, path, { body, params, requireAuth = true } = {}) 
     response = await fetch(url.toString(), {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : (body !== undefined ? JSON.stringify(body) : undefined),
     });
   } catch (err) {
     // Network failure — backend unreachable

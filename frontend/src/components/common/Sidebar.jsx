@@ -14,7 +14,7 @@ import {
 import { useMission } from '../../context/MissionContext';
 import { useAuth } from '../../context/AuthContext';
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const { robots, detections, errors } = useMission();
   const { user, logout } = useAuth();
@@ -69,9 +69,31 @@ export function Sidebar() {
   const isBackendHealthy = !errors.dashboard;
 
   return (
-    <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-[#090d18]/70 backdrop-blur-md flex flex-col justify-between shrink-0 transition-colors">
-      {/* Navigation Links */}
-      <div className="p-4 space-y-6">
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+        />
+      )}
+
+      <aside
+        className={`fixed lg:static top-0 bottom-0 left-0 z-50 lg:z-10 w-64 h-full border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#080d1a] flex flex-col justify-between shrink-0 overflow-y-auto transition-transform duration-200 ease-in-out ${
+          isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Navigation Links */}
+        <div className="p-4 space-y-6">
+          <div className="flex items-center justify-between lg:hidden pb-2 border-b border-slate-200 dark:border-slate-800">
+            <span className="font-mono font-bold text-xs text-cyan-500">NAVIGATION</span>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
         <div>
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3">
             Mission Operations
@@ -83,6 +105,7 @@ export function Sidebar() {
                 <NavLink
                   key={to}
                   to={to}
+                  onClick={() => onClose && onClose()}
                   className={({ isActive }) =>
                     `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-mono font-semibold transition-all duration-150 ${
                       isActive
@@ -164,5 +187,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

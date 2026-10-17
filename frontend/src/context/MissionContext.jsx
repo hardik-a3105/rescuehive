@@ -5,10 +5,9 @@ import * as detectionApi from '../services/api/detectionApi.js';
 import * as alertApiService from '../services/api/alertApi.js';
 import { getDashboardSummary } from '../services/api/dashboardApi.js';
 import { useAuth } from './AuthContext';
+import { useSettings } from './SettingsContext';
 
 const MissionContext = createContext();
-
-const POLL_INTERVAL = 8000; // 8-second background polling
 
 // ─── Normalizers ─────────────────────────────────────────────────────────────
 function normalizeRobot(r, idx = 0) {
@@ -83,8 +82,9 @@ function normalizeDetection(d, robotMap = {}) {
     BACKPACK: 'Backpack',
   };
 
-  const posX = typeof d.x === 'number' ? d.x : 2.0;
-  const posY = typeof d.y === 'number' ? d.y : 3.0;
+  const isVisionLLM = d.analysis_source === 'OLLAMA_VISION_LLM';
+  const posX = typeof d.x === 'number' ? d.x : (isVisionLLM ? null : 2.0);
+  const posY = typeof d.y === 'number' ? d.y : (isVisionLLM ? null : 3.0);
   const typeName = typeMap[d.detection_type] || d.detection_type || 'Object';
 
   const defaultImg =
@@ -94,26 +94,52 @@ function normalizeDetection(d, robotMap = {}) {
       ? 'https://images.unsplash.com/photo-1525874684015-58379d421a52?auto=format&fit=crop&w=600&q=80'
       : 'https://images.unsplash.com/photo-1584467735871-8e85353a8413?auto=format&fit=crop&w=600&q=80';
 
+  let resolvedImageUrl = d.image_path || defaultImg;
+  if (resolvedImageUrl.startsWith('/uploads')) {
+    const apiBase = import.meta.env.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')
+      : 'http://localhost:8000';
+    resolvedImageUrl = `${apiBase}${resolvedImageUrl}`;
+  }
+
+  const locationSector = d.location_description
+    ? d.location_description
+    : (posX !== null && posY !== null ? `Zone (${posX.toFixed(1)}, ${posY.toFixed(1)})` : 'Manual Image Upload');
+
+  const sourceName = isVisionLLM
+    ? `Ollama Vision (${d.model_name || 'gemma3:4b'})`
+    : (robot?.name || (d.robot_id ? `Robot ${String(d.robot_id).slice(0, 8)}` : 'Fleet Scout'));
+
+  const detailsText = d.description
+    ? `${d.description}${d.evidence ? ` • Evidence: ${d.evidence}` : ''}`
+    : `${typeName} detected with ${(d.confidence ? d.confidence * 100 : 85).toFixed(0)}% confidence.`;
+
   return {
     ...d,
     id: d.id,
     type: typeName,
     detection_type: d.detection_type,
-    confidence: d.confidence !== undefined ? d.confidence : 0.88,
+    confidence: d.confidence !== undefined && d.confidence !== null ? d.confidence : 0.85,
     status: d.status || 'PENDING',
     robotId: d.robot_id,
-    robotName: robot?.name || (d.robot_id ? `Robot ${String(d.robot_id).slice(0, 8)}` : 'Fleet Scout'),
+    robotName: sourceName,
+    analysis_source: d.analysis_source || 'ROBOT_TELEMETRY',
+    model_name: d.model_name,
+    review_priority: d.review_priority || 'MEDIUM',
+    evidence: d.evidence,
+    description: d.description,
+    location_description: d.location_description,
     x: posX,
     y: posY,
     z: d.z || 0,
     location: {
-      x: Number(posX.toFixed(1)),
-      y: Number(posY.toFixed(1)),
-      sector: `Zone (${posX.toFixed(1)}, ${posY.toFixed(1)})`,
+      x: posX !== null ? Number(posX.toFixed(1)) : null,
+      y: posY !== null ? Number(posY.toFixed(1)) : null,
+      sector: locationSector,
     },
-    imageUrl: d.image_path || defaultImg,
-    sensor: 'AI Vision / Multi-Spectrum Optical',
-    details: `${typeName} detected with ${(d.confidence ? d.confidence * 100 : 88).toFixed(0)}% confidence at coordinates (${posX.toFixed(1)}, ${posY.toFixed(1)}).`,
+    imageUrl: resolvedImageUrl,
+    sensor: isVisionLLM ? 'Local Vision LLM (Gemma 3 4B)' : 'AI Vision / Multi-Spectrum Optical',
+    details: detailsText,
     timestamp: d.timestamp ? new Date(d.timestamp).toLocaleTimeString() : 'Just now',
   };
 }
@@ -206,6 +232,7 @@ function normalizeMission(m) {
 
 export function MissionProvider({ children }) {
   const { isAuthenticated } = useAuth();
+  const { settings, playAlertSound } = useSettings();
 
   // ─── Data state ──────────────────────────────────────────────────
   const [robots, setRobots] = useState([]);
@@ -238,10 +265,15 @@ export function MissionProvider({ children }) {
   const addNotification = useCallback((message, type = 'info') => {
     const id = Date.now() + Math.random();
     setNotifications((prev) => [...prev, { id, message, type, time: new Date().toLocaleTimeString() }]);
+    if (type === 'error' || type === 'warning') {
+      playAlertSound('HIGH');
+    } else {
+      playAlertSound('MEDIUM');
+    }
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 4500);
-  }, []);
+  }, [playAlertSound]);
 
   const removeNotification = useCallback((id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -359,14 +391,15 @@ export function MissionProvider({ children }) {
 
     refreshAll();
 
+    const pollIntervalMs = (settings?.refreshRate ? Number(settings.refreshRate) : 8) * 1000;
     intervalRef.current = setInterval(() => {
       refreshAll();
-    }, POLL_INTERVAL);
+    }, pollIntervalMs);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isAuthenticated, refreshAll]);
+  }, [isAuthenticated, refreshAll, settings?.refreshRate]);
 
   // ─── Action: Update detection status (Confirm / Dismiss) ──────────
   const updateDetectionStatus = useCallback(async (detectionId, newStatus) => {

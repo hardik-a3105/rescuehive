@@ -67,7 +67,15 @@ export function DetectionTable({
                 </td>
 
                 <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                  {det.robotName}
+                  {det.analysis_source === 'OLLAMA_VISION_LLM' ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono">
+                        OLLAMA VISION
+                      </span>
+                    </div>
+                  ) : (
+                    det.robotName
+                  )}
                 </td>
 
                 <td className="py-3.5 px-4">
@@ -80,17 +88,24 @@ export function DetectionTable({
                 </td>
 
                 <td className="py-3.5 px-4 font-bold">
-                  <span
-                    className={
-                      det.confidence >= 0.9
-                        ? 'text-emerald-500'
-                        : det.confidence >= 0.75
-                        ? 'text-cyan-500'
-                        : 'text-amber-500'
-                    }
-                  >
-                    {Math.round(det.confidence * 100)}%
-                  </span>
+                  <div className="flex flex-col">
+                    <span
+                      className={
+                        det.confidence >= 0.9
+                          ? 'text-emerald-500'
+                          : det.confidence >= 0.75
+                          ? 'text-cyan-500'
+                          : 'text-amber-500'
+                      }
+                    >
+                      {Math.round(det.confidence * 100)}%
+                    </span>
+                    {det.analysis_source === 'OLLAMA_VISION_LLM' && (
+                      <span className="text-[9px] text-slate-400 font-normal">
+                        uncalibrated est.
+                      </span>
+                    )}
+                  </div>
                 </td>
 
                 <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={det.location.sector}>
@@ -141,38 +156,44 @@ export function DetectionTable({
         <Modal
           isOpen={!!activeDetection}
           onClose={() => setActiveDetection(null)}
-          title={`Detection Inspection #${activeDetection.id}`}
-          subtitle={`Simulated Optical/Thermal Payload Stream • ${activeDetection.robotName}`}
+          title={`Detection Inspection #${String(activeDetection.id).slice(0, 8)}`}
+          subtitle={
+            activeDetection.analysis_source === 'OLLAMA_VISION_LLM'
+              ? `Local Vision LLM Analysis • ${activeDetection.model_name || 'Gemma 3 4B'}`
+              : `Optical/Telemetry Payload Stream • ${activeDetection.robotName}`
+          }
           maxWidth="max-w-2xl"
         >
           <div className="space-y-4">
-            {/* Mock Image Snapshot */}
-            <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black">
+            {/* Image Snapshot */}
+            <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black flex items-center justify-center">
               <img
                 src={activeDetection.imageUrl}
                 alt="Detection frame"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
               <div className="absolute top-3 left-3 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-md text-[10px] font-mono text-cyan-400">
-                AI BOUNDING BOX: {activeDetection.type.toUpperCase()} ({Math.round(activeDetection.confidence * 100)}%)
+                {activeDetection.analysis_source === 'OLLAMA_VISION_LLM'
+                  ? `AI INTERPRETATION: ${activeDetection.type.toUpperCase()} (~${Math.round(activeDetection.confidence * 100)}% UNCALIBRATED)`
+                  : `TARGET: ${activeDetection.type.toUpperCase()} (${Math.round(activeDetection.confidence * 100)}%)`}
               </div>
               <div className="absolute bottom-3 right-3 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-md text-[10px] font-mono text-amber-400">
-                [SIMULATION FRAME]
+                {activeDetection.analysis_source === 'OLLAMA_VISION_LLM' ? '[LOCAL GEMMA 3 4B]' : '[TELEMETRY FRAME]'}
               </div>
             </div>
 
             {/* Metadata Detail */}
             <div className="grid grid-cols-2 gap-3 text-xs font-mono">
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-                <span className="text-slate-400 text-[10px] uppercase block">Location Coordinates</span>
+                <span className="text-slate-400 text-[10px] uppercase block">Location / Region</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200 mt-1 block">
-                  X: {activeDetection.location.x}, Y: {activeDetection.location.y}
+                  {activeDetection.location.x !== null ? `X: ${activeDetection.location.x}, Y: ${activeDetection.location.y}` : 'Manual Photographic Ingestion'}
                 </span>
                 <span className="text-[11px] text-slate-500">{activeDetection.location.sector}</span>
               </div>
 
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-                <span className="text-slate-400 text-[10px] uppercase block">Sensor Pipeline</span>
+                <span className="text-slate-400 text-[10px] uppercase block">Analysis Pipeline</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200 mt-1 block">
                   {activeDetection.sensor}
                 </span>
@@ -180,9 +201,20 @@ export function DetectionTable({
               </div>
             </div>
 
+            {activeDetection.evidence && (
+              <div className="p-3 rounded-lg bg-cyan-950/20 border border-cyan-800/40 text-xs">
+                <span className="text-cyan-400 text-[10px] uppercase font-mono block mb-1 font-bold">
+                  Observed Visual Evidence
+                </span>
+                <p className="text-slate-300 leading-relaxed font-sans">
+                  {activeDetection.evidence}
+                </p>
+              </div>
+            )}
+
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs">
               <span className="text-slate-400 text-[10px] uppercase font-mono block mb-1">
-                Field Diagnostic Note
+                Diagnostic Note / Description
               </span>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
                 {activeDetection.details}

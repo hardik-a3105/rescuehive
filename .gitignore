@@ -57,6 +57,9 @@ lerna-debug.log*
 *.db-shm
 *.db-wal
 *.sqlite
+uploads/
+*/uploads/
+!*/uploads/.gitkeep
 
 # AI / ML Large Weights & Checkpoints (Place in cloud storage or models registry)
 ai/models/*.pt

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { AuthProvider } from './context/AuthContext';
 import { MissionProvider } from './context/MissionContext';
 import { AppShell } from './layouts/AppShell';
@@ -19,8 +20,9 @@ import { NotFoundPage } from './pages/NotFoundPage';
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <MissionProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <MissionProvider>
           <BrowserRouter>
             <Routes>
               {/* Public Login Route */}
@@ -48,6 +50,7 @@ export default function App() {
           </BrowserRouter>
         </MissionProvider>
       </AuthProvider>
-    </ThemeProvider>
+    </SettingsProvider>
+  </ThemeProvider>
   );
 }

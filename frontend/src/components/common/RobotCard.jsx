@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '../ui/Button';
+import { useSettings } from '../../context/SettingsContext';
 
 export function RobotCard({ robot, onAction, onRetask, onInspect, isCompact = false }) {
+  const { formatArea } = useSettings();
   const {
     id,
     name,
@@ -145,7 +147,7 @@ export function RobotCard({ robot, onAction, onRetask, onInspect, isCompact = fa
               <Activity className="w-3.5 h-3.5 text-cyan-400" />
             </div>
             <div className="text-xs font-bold mt-1 text-slate-900 dark:text-white truncate">
-              {(exploredArea ?? 0).toLocaleString()} m²
+              {formatArea(exploredArea ?? 0)}
             </div>
           </div>
         </div>

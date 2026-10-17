@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # Frontend Integration
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Local Ollama Vision LLM Configuration (Phase 4A)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_VISION_MODEL: str = "gemma3:4b"
+    AI_ANALYSIS_TIMEOUT_SECONDS: int = 120
+    MAX_UPLOAD_SIZE_MB: int = 10
+    UPLOAD_DIR: str = "uploads"
+
     @property
     def cors_origins(self) -> List[str]:
         origins = [

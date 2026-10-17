@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useMission } from '../context/MissionContext';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -38,6 +39,7 @@ export function MissionsPage() {
   } = useMission();
 
   const { isCommander } = useAuth();
+  const { formatArea } = useSettings();
 
   const [showStopDialog, setShowStopDialog] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -180,7 +182,7 @@ export function MissionsPage() {
                       <div className="flex items-center justify-between">
                         <span>Surveyed Area:</span>
                         <span className="font-bold text-cyan-600 dark:text-cyan-400">
-                          {mission.exploredAreaSqM?.toLocaleString()} m²
+                          {formatArea(mission.exploredAreaSqM)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -331,7 +333,7 @@ export function MissionsPage() {
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
                     <span className="text-slate-400 text-[10px] uppercase block">Surveyed Area</span>
                     <span className="font-bold text-cyan-500 mt-1 block">
-                      {selectedMission.exploredAreaSqM?.toLocaleString()} m²
+                      {formatArea(selectedMission.exploredAreaSqM)}
                     </span>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">

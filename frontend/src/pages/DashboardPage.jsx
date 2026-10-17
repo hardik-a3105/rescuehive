@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useMission } from '../context/MissionContext';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { DashboardCard } from '../components/common/DashboardCard';
 import { MapView } from '../components/common/MapView';
@@ -44,6 +45,7 @@ export function DashboardPage() {
   } = useMission();
 
   const { isCommander } = useAuth();
+  const { formatArea } = useSettings();
   const [selectedRobotId, setSelectedRobotId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -163,7 +165,7 @@ export function DashboardPage() {
         />
         <DashboardCard
           title="Exploration"
-          value={`${Number(exploredArea).toLocaleString()} m²`}
+          value={formatArea(exploredArea)}
           subtitle="Surveyed Surface Area"
           icon={MapPin}
         />

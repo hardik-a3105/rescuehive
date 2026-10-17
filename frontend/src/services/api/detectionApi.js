@@ -24,3 +24,16 @@ export async function confirmDetection(detectionId) {
 export async function dismissDetection(detectionId) {
   return api.patch(`/detections/${detectionId}/dismiss`);
 }
+
+export async function analyzeImage(file, missionId = null) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (missionId) {
+    formData.append('mission_id', missionId);
+  }
+  return api.post('/ai/analyze-image', formData);
+}
+
+export async function getAiStatus() {
+  return api.get('/ai/status');
+}

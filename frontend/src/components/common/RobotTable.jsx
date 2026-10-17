@@ -2,8 +2,10 @@ import React from 'react';
 import { Bot, Plane, Battery, Wifi, MapPin } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '../ui/Button';
+import { useSettings } from '../../context/SettingsContext';
 
 export function RobotTable({ robots = [], onSelectRobot, onAction }) {
+  const { formatArea } = useSettings();
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
       <table className="w-full text-left text-xs font-mono">
@@ -73,7 +75,7 @@ export function RobotTable({ robots = [], onSelectRobot, onAction }) {
                 </td>
 
                 <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
-                  {robot.exploredArea.toLocaleString()} m²
+                  {formatArea(robot.exploredArea)}
                 </td>
 
                 {onAction && (

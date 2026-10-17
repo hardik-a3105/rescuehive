@@ -114,24 +114,45 @@ rescuehive/
 
 ---
 
-## 5. Current Phase
+## 5. System Features & Current Status
 
-**Phase 0: Project Foundation**  
-- Clean, scalable monorepo setup
-- React + Vite + Tailwind CSS shell setup
-- FastAPI backend baseline with health check endpoint (`GET /api/v1/health`)
-- SQLAlchemy PostgreSQL connection layer
-- Simulator integration boundary documentation
+### ✅ Implemented Features
+1. **Disaster Command Operations (Frontend)**:
+   - **Tactical Dashboard**: Fleet status overview, active mission telemetry, interactive tactical map, and real-time alerts.
+   - **Fixed Sidebar & Responsive Shell**: Stationary desktop sidebar (`100vh`) with independent content scrolling; responsive mobile drawer with hamburger toggle.
+   - **Light & Dark Theme Engine**: High-contrast tactical dark mode paired with a functional light mode, with instant persistence in `localStorage`.
+   - **Workstation System Settings**:
+     - Operator callsign, name, and agency profile editing with dirty-state indicator (`● UNSAVED CHANGES`).
+     - Real-time polling rate options (5s, 8s, 15s, 30s) wired into global API state.
+     - Universal Metric (`m²`, `m/s`, `°C`) and Imperial (`sq ft`, `mph`, `°F`) measurement unit conversion across all views.
+     - Web Audio API tactical sound alerts with pitch frequency warnings and chime previews.
+     - Field-optimized compact dashboard layout density mode.
+   - **AI Debrief Reports**:
+     - Live compilation of PostgreSQL mission data (elapsed duration, surveyed area, casualty triage counts, hazard logs).
+     - Filterable by mission, status (`ACTIVE`, `COMPLETED`, `PAUSED`), and date horizon (`24h`, `7d`, `30d`, `All`).
+     - Browser-native "Print / Export PDF" with dedicated `@media print` stylesheets.
+     - Prominent AI advisory disclaimers mandating human-in-the-loop verification before field execution.
+   - **Fleet & Mission Management**:
+     - Dynamic fleet cards and table with collapsible telemetry.
+     - Mission creation, status controls (`START`, `PAUSE`, `ABORT`), and live objective checklists.
+
+2. **Backend & AI Architecture (FastAPI & Ollama)**:
+   - **Relational PostgreSQL Database**: SQLAlchemy 2.0 models for Users, Robots, Missions, Telemetry, and Detections.
+   - **JWT Authentication & RBAC**: Role-based access control distinguishing incident commanders from field operators.
+   - **Local Vision Intelligence (Gemma 3 4B)**:
+     - GPU-accelerated multimodal scene understanding via local Ollama daemon.
+     - Automated detection of victims, fire, debris, and structural hazards with qualitative confidence indicators.
+     - Human-in-the-loop confirmation / dismissal queue syncing back to PostgreSQL.
 
 ---
 
-## 6. Future Phases
+## 6. External Boundary & Roadmap
 
-- **Phase 1: Mission Control UI & Shell** — Complete dashboard interface, mission telemetry panels, interactive map.
-- **Phase 2: Database Schema & Authentication** — Full PostgreSQL models (Users, Robots, Missions, Detections) and JWT auth.
-- **Phase 3: AI / CV Pipeline Integration** — YOLO victim/hazard detection, segmentation, and depth inference.
-- **Phase 4: Simulator WebSocket & Telemetry Ingestion** — Live bidirectional bridge to the external Webots simulation.
-- **Phase 5: Mission Management & Reporting** — Live command execution, confirmation workflows, PDF report generation.
+- **External Webots Simulation**: Webots physics and hardware simulation operate as an external boundary to this repository and connect via API/WebSocket ingestion endpoints.
+- **Future Enhancements**:
+  - Edge-device live RTSP/WebRTC camera streaming.
+  - Pixel-calibrated bounding box overlays with YOLOv11 and depth estimation (MiDaS).
+  - Multi-agent decentralized consensus for autonomous swarm routing.
 
 ---
 
@@ -187,3 +208,77 @@ rescuehive/
    npm run dev
    ```
 4. Open your browser at `http://localhost:5173`.
+
+---
+
+## 8. Phase 4A — Local Ollama Vision LLM Setup & Usage
+
+RescueHive integrates a local vision-capable LLM (**Gemma 3 4B**) through **Ollama** for automated disaster-scene analysis and human-in-the-loop review.
+
+### Prerequisites
+- [Ollama](https://ollama.com/download) installed locally on Windows.
+- NVIDIA GPU with CUDA acceleration recommended (e.g. RTX 3050 Laptop GPU or higher).
+
+### 1. Check whether Ollama is Running
+In Windows PowerShell:
+```powershell
+# Check if Ollama CLI is responsive
+ollama list
+
+# If Ollama serve is not running, start it:
+ollama serve
+```
+
+### 2. Pull the Vision Model
+To download Gemma 3 4B (3.4 GB vision-capable model):
+```powershell
+# Pull model
+ollama pull gemma3:4b
+
+# Verify capabilities interactively
+ollama run gemma3:4b "Explain your capabilities for image analysis."
+```
+*Note: To store models on secondary storage (e.g. D: drive), configure `[System.Environment]::SetEnvironmentVariable('OLLAMA_MODELS', 'D:\ollama\models', 'User')` before starting `ollama serve`.*
+
+### 3. Environment Variables
+Add or verify settings in `backend/.env`:
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_VISION_MODEL=gemma3:4b
+AI_ANALYSIS_TIMEOUT_SECONDS=120
+MAX_UPLOAD_SIZE_MB=10
+```
+
+### 4. Running the Full System
+1. **Start Backend**:
+   ```powershell
+   cd backend
+   .\venv\Scripts\activate
+   uvicorn app.main:app --reload
+   ```
+2. **Start Frontend**:
+   ```powershell
+   cd frontend
+   npm run dev
+   ```
+
+### 5. How to Upload a Test Image
+1. Navigate to **AI Detections Queue** in the sidebar: `http://localhost:5173/detections`.
+2. Observe the **Local Ollama Vision Intelligence** card at the top of the page. The status badge will show `Ollama Engine Ready (GPU)`.
+3. Drag & drop or browse a disaster-scene photo (`.jpg`, `.png`, or `.webp`, up to 10MB).
+4. Optionally associate with an active mission context.
+5. Click **Run AI Scene Analysis**.
+6. The system displays a progress scanner while Gemma 3 processes multimodal features, generates a structured scene summary, and extracts visible emergency targets (victims, fire, debris, gas cylinders, helmets, backpacks).
+
+### 6. Reviewing and Confirming Saved Detections
+1. Findings are automatically persisted in PostgreSQL with initial status `PENDING`.
+2. Scroll to the **AI Detections Queue** table below.
+3. Findings from manual upload display source pill `OLLAMA VISION` and an explicit `uncalibrated est.` confidence indicator.
+4. Click the **Inspect (Eye)** icon to view the photographic frame, visual evidence notes, and scene diagnostic summary.
+5. Click **Confirm (Checkmark)** to verify the detection, or **Dismiss (X)** to discard a false positive. Both actions persist status changes directly through FastAPI into PostgreSQL.
+
+### 7. Known Model Limitations
+- **Qualitative Interpretation vs Object Detection**: Gemma 3 4B is a vision-language model, not a calibrated object detector (such as YOLO). Confidence scores are qualitative model estimates and not statistically calibrated probabilities.
+- **No Calibrated Bounding Boxes**: Spatial locations are approximate regional descriptions (e.g., "lower-left", "center foreground") rather than pixel-precise bounding boxes.
+- **Human-in-the-Loop Requirement**: Operators must verify findings before marking detections as `CONFIRMED`.
+- **Lighting and Smoke**: Dense obscuration, extreme smoke, or pitch-black darkness reduce multimodal visual acuity.

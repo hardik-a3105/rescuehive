@@ -65,6 +65,13 @@ app.add_middleware(
 # Mount API v1 routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+# Mount /uploads for locally stored disaster scene images
+import os
+from fastapi.staticfiles import StaticFiles
+
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+
 
 # ─── Global Error Handlers ───────────────────────────────────────────
 @app.exception_handler(404)

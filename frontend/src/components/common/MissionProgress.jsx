@@ -1,8 +1,10 @@
 import React from 'react';
 import { Clock, Bot, UserCheck, Flame, Compass } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { useSettings } from '../../context/SettingsContext';
 
 export function MissionProgress({ mission, robotsCount = 3, victimsCount = 4, hazardsCount = 3 }) {
+  const { formatArea } = useSettings();
   const percent = mission?.exploredAreaPercent || 68.4;
   const duration = mission?.duration || '01:42:18';
 
@@ -31,7 +33,7 @@ export function MissionProgress({ mission, robotsCount = 3, victimsCount = 4, ha
           </div>
           <div className="flex justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
             <span>Staging Line (0%)</span>
-            <span>Target Coverage ({mission?.targetAreaSqM?.toLocaleString() || '6,140'} m²)</span>
+            <span>Target Coverage ({formatArea(mission?.targetAreaSqM || 6140)})</span>
           </div>
         </div>
 

@@ -169,9 +169,19 @@ class Detection(Base):
     status = Column(Enum(DetectionStatus), nullable=False, default=DetectionStatus.PENDING)
     timestamp = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
 
+    # Phase 4A: Vision LLM Analysis Metadata
+    description = Column(Text, nullable=True)
+    evidence = Column(Text, nullable=True)
+    location_description = Column(String(255), nullable=True)
+    analysis_source = Column(String(100), nullable=True, default="ROBOT_TELEMETRY")
+    model_name = Column(String(100), nullable=True)
+    review_priority = Column(String(50), nullable=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
     # Relationships
     mission = relationship("Mission", back_populates="detections")
     robot = relationship("Robot", back_populates="detections")
+    user = relationship("User")
 
     def __repr__(self):
         return f"<Detection {self.detection_type.value} confidence={self.confidence}>"

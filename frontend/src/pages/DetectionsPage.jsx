@@ -10,13 +10,14 @@ import {
 import { useMission } from '../context/MissionContext';
 import { PageHeader } from '../components/common/PageHeader';
 import { DetectionTable } from '../components/common/DetectionTable';
+import { ImageAnalysisSection } from '../components/common/ImageAnalysisSection';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingState } from '../components/common/LoadingState';
 import { ErrorState } from '../components/common/ErrorState';
 import { Button } from '../components/ui/Button';
 
 export function DetectionsPage() {
-  const { detections, robots, loading, errors, updateDetectionStatus, fetchDetections } = useMission();
+  const { detections, robots, missions, loading, errors, updateDetectionStatus, fetchDetections, fetchDashboard } = useMission();
 
   // Filters state
   const [selectedType, setSelectedType] = useState('ALL');
@@ -74,7 +75,7 @@ export function DetectionsPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader
         title="AI Detections Queue"
-        subtitle="Human-in-the-loop review of computer vision detections and hazard anomalies (FastAPI)"
+        subtitle="Human-in-the-loop review of computer vision detections and hazard anomalies (FastAPI & Ollama)"
         badge={
           <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-xs border border-amber-500/30 font-semibold">
             {pendingCount} PENDING REVIEW
@@ -94,6 +95,14 @@ export function DetectionsPage() {
             </Button>
           </div>
         }
+      />
+
+      {/* Phase 4A: Local Ollama Vision Ingestion & Analysis Section */}
+      <ImageAnalysisSection
+        missions={missions}
+        onAnalysisSuccess={async () => {
+          await Promise.all([fetchDetections(), fetchDashboard()]);
+        }}
       />
 
       {/* Filter Toolbar */}
